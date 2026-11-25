@@ -66,12 +66,12 @@ La regla de singular/plural del legacy es: exactamente 1 volteo usa la forma `on
 ### Diseño del servicio de partida (Fase 2)
 Decisiones técnicas de la F2 para aprobar en su gate. No cambian lo que promete el spec.
 
-- **Reloj inyectable, no *fake timers* globales.** `game/scheduler.ts` define `Scheduler { setTimeout(fn, ms): handle; clearTimeout(handle) }` con un token de Angular cuyo valor por defecto envuelve `setTimeout`. Las pruebas usan un `FakeScheduler` con `advance(ms)`: así CA-15 verifica los tiempos exactos (1000, 2499, 600, 400, 600, 200) sin depender del reloj real. El azar (`RANDOM`, por defecto `Math.random`) se inyecta igual.
+- **Reloj inyectable, no *fake timers* globales.** `game/tokens.ts` define `Scheduler { setTimeout(fn, ms): handle; clearTimeout(handle) }` con un token de Angular cuyo valor por defecto envuelve `setTimeout`. Las pruebas usan un `FakeScheduler` con `advance(ms)`: así CA-15 verifica los tiempos exactos (1000, 2499, 600, 400, 600, 200) sin depender del reloj real. El azar (`RANDOM`, por defecto `Math.random`) se inyecta igual.
 - **Mensajes como clave + parámetros.** `game/messages.ts` define `GameMessage { key, params? }` con las claves del catálogo del plan. El servicio nunca produce texto; los plurales ("una ficha volteada" / "N fichas") los resuelve la capa de i18n a partir de `params.count` (F3 y F4). Las pruebas comprueban clave y parámetros.
 - **Forma del servicio.** `game/game.service.ts`: `GameService` inyectable, con señales de solo lectura `rows`, `cols`, `level`, `board`, `turn` (`'user'` | `'computer'` | `'over'`), `message`, `flash` (casilla que parpadea, o `null`) y `highlight` (casilla resaltada, o `null`). Acciones: `newGame()`, `setRows(n)`, `setCols(n)`, `setLevel(l)`, `click(pos | null)` (`null` = clic fuera de una ficha), `skipTurn()`, `pointerAt(pos | null)` (`null` = el cursor salió del tablero). El layout y los píxeles quedan fuera: la interfaz los traduce a posiciones con `domain/layout`.
 - **Turno de la computadora, como secuencia de pasos con temporizadores.** Al pasar el turno se agenda una espera de `1000 + floor(azar × 1500)` ms (0 ms tras *Skip Turn*). Al vencer: se evalúa el fin de partida; si la computadora no tiene jugadas, mensaje y vuelve el usuario; si tiene, se emite el mensaje de su jugada y se agenda el parpadeo: `flash` encendido de 0 a 600 ms, apagado hasta 1000, encendido hasta 1600, apagado hasta 1800 y entonces se aplica la jugada y vuelve el turno al usuario, evaluando si el usuario puede mover o si la partida terminó. Cada paso es un temporizador que el servicio guarda en una lista.
 - **Cancelación (fix B).** Cada reinicio (*New Game*, cambio de filas o columnas) incrementa una *generación*, cancela todos los temporizadores pendientes y deja que cualquier callback rezagado se ignore si su generación ya no es la vigente. Así no puede aplicarse ninguna jugada sobre una partida distinta de la que la originó.
-- ***Skip Turn* sin bloqueo (fix A).** `skipTurn()` limpia el mensaje, pasa el turno y agenda; retorna de inmediato y el servicio sigue aceptando acciones durante el parpadeo.
+- ***Skip Turn* sin bloqueo (fix A).** `skipTurn()` pasa el turno y decide la jugada de la computadora de inmediato (el mensaje de la jugada ya está visible al retornar) y solo agenda el parpadeo; retorna de inmediato y el servicio sigue aceptando acciones durante el parpadeo.
 - **Resaltado derivado (fix C).** El servicio guarda solo la casilla bajo el cursor; `highlight` es calculado: está encendido únicamente si es el turno del usuario, la casilla está vacía y es una jugada legal suya. Desaparece solo al salir del tablero (`pointerAt(null)`), al cambiar de casilla y al pasar el turno. Detalle observable respecto al legacy: si el turno vuelve al usuario con el cursor quieto sobre una jugada legal, se resalta de inmediato en lugar de esperar al siguiente movimiento del mouse; ambas cosas cumplen el spec ("resalta la casilla bajo el cursor si es una jugada legal del usuario").
 - **Estado inicial y reinicios.** Al crear el servicio: 6×10, Medium, mensaje de créditos. *New Game* → instrucciones; cambio de filas o columnas → mensaje de nuevo tamaño; tras cualquier reinicio se evalúa el tablero (2×2 termina de inmediato y su resultado reemplaza al mensaje; si el usuario no pudiera mover, mensaje de *Skip Turn*).
 - **Orden del clic del usuario** (igual al spec): partida terminada, no es su turno, sin jugadas disponibles, fuera de ficha, casilla ocupada, jugada sin volteos, jugada legal. Los seis rechazos no tocan el tablero.
@@ -81,7 +81,7 @@ Decisiones técnicas de la F2 para aprobar en su gate. No cambian lo que promete
 | Fase | Rama | Depende de | Spec(s) | Estado |
 |---|---|---|---|---|
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
-| F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | construida; pendiente de verificación |
+| F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | verificada; pendiente de merge |
 | F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | pendiente |
 | F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | pendiente |
 
@@ -96,7 +96,7 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - [x] `domain/layout`: cálculo del layout y hit-test (cubre CA-10, CA-11, CA-12).
 
 **F2 — Servicio de partida** (rama `migrate/partida-reversi-juego`)
-- [x] `game/scheduler.ts`, `game/messages.ts` y `game/test-utils.ts` (reloj y azar inyectables, `FakeScheduler`, tipos de mensaje). Soporte sin comportamiento propio: se prueba a través de las demás tareas.
+- [x] `game/tokens.ts`, `game/messages.ts` y `game/test-utils.ts` (reloj y azar inyectables, `FakeScheduler`, tipos de mensaje). Soporte sin comportamiento propio: se prueba a través de las demás tareas.
 - [x] `game/GameService`: estado, reinicios y mensajes por clave; clic del usuario en sus 7 casos; *Skip Turn*; cambio de dificultad (cubre CA-13, CA-14, CA-17, CA-18, CA-21, CA-22).
 - [x] Turno de la computadora con temporizadores cancelables y cancelación por generación (cubre CA-15, CA-16, CA-19).
 - [x] Resaltado derivado del cursor (cubre CA-20).
@@ -170,17 +170,17 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 | CA-10 | Límites y defaults · Dibujo del tablero | `domain/layout.spec.ts` | ✅ 2026-11-25 |
 | CA-11 | Límites y defaults · clic dentro de la ficha | `domain/layout.spec.ts` | ✅ 2026-11-25 |
 | CA-12 | Modos de falla · espacio insuficiente | `domain/layout.spec.ts` | ✅ 2026-11-25 |
-| CA-13 | Flujo · Turno del usuario | `game/game.service.spec.ts` | pendiente |
-| CA-14 | Flujo · Skip Turn | `game/game.service.spec.ts` | pendiente |
-| CA-15 | Flujo · Turno de la computadora; Límites · tiempos | `game/game.service.spec.ts` | pendiente |
-| CA-16 | Flujo · Skip Turn (la interfaz sigue respondiendo) | `game/game.service.spec.ts` | pendiente |
-| CA-17 | Flujo · Turno de la computadora | `game/game.service.spec.ts` | pendiente |
-| CA-18 | Flujo · Turno de la computadora | `game/game.service.spec.ts` | pendiente |
-| CA-19 | Flujo · Cambios durante la jugada; Invariantes · jugada nunca sobre otra partida | `game/game.service.spec.ts` | pendiente |
-| CA-20 | Invariantes · resaltado (dos) | `game/game.service.spec.ts` | pendiente |
-| CA-21 | Contrato · Selector de dificultad | `game/game.service.spec.ts` | pendiente |
-| CA-22 | Flujo · Inicio de partida; Contrato · New Game y selectores | `game/game.service.spec.ts` | pendiente |
-| CA-23 | Invariantes · usuario mueve primero; computadora siempre legal | `game/game.service.spec.ts` | pendiente |
+| CA-13 | Flujo · Turno del usuario | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-14 | Flujo · Skip Turn | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-15 | Flujo · Turno de la computadora; Límites · tiempos | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-16 | Flujo · Skip Turn (la interfaz sigue respondiendo) | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-17 | Flujo · Turno de la computadora | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-18 | Flujo · Turno de la computadora | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-19 | Flujo · Cambios durante la jugada; Invariantes · jugada nunca sobre otra partida | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-20 | Invariantes · resaltado (dos) | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-21 | Contrato · Selector de dificultad | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-22 | Flujo · Inicio de partida; Contrato · New Game y selectores | `game/game.service.spec.ts` | ✅ 2026-11-25 |
+| CA-23 | Invariantes · usuario mueve primero; computadora siempre legal | `game/game.service.spec.ts` | ✅ 2026-11-25 |
 | CA-24 | Contrato · tabla de controles | `ui/controls.component.spec.ts` | pendiente |
 | CA-25 | Límites y defaults · Colores y Dibujo | `ui/board.component.spec.ts` | pendiente |
 | CA-26 | Contrato · Tablero; Límites · clic dentro de la ficha | `ui/board.component.spec.ts` | pendiente |
@@ -210,3 +210,9 @@ Seguimientos que dejó la verificación de la Fase 1 (no son ajustes del spec):
 - **F3:** si faltan columnas y filas a la vez, el legacy muestra solo el mensaje de filas ("too short"); `computeLayout` informa ambos indicadores, y la interfaz decide la precedencia para igualar al legacy.
 - **F3:** `hitTest` devuelve `NaN` si recibe coordenadas `NaN`; los eventos reales del mouse siempre dan números.
 - **Pendiente de verificación global:** `npm audit` y licencias de dependencias transitivas (requieren red).
+
+Seguimientos que dejó la verificación de la Fase 2 (no son ajustes del spec):
+- **F3:** `GameService` no valida sus entradas: `click` con una posición fuera de rango lanza un error, y `setRows`/`setCols` con un valor no permitido deja el estado inconsistente. La interfaz debe pasarle solo posiciones de `domain/layout` (`hitTest`) y valores de los selectores permitidos (`ALLOWED_SIZES`).
+- **F3:** `GameService` no tiene `ngOnDestroy`; con un solo servicio durante toda la vida de la aplicación no hay fuga relevante.
+- **F3:** decidir la precedencia de los mensajes de ventana angosta o baja respecto del mensaje del juego (ya anotado en la Fase 1).
+- Un clic o un segundo *Skip Turn* durante el parpadeo reemplaza el mensaje de la jugada por el de "no es tu turno", y ese mensaje permanece al terminar la jugada. Es igual al legacy para el clic y lo pide el spec; queda registrado por si el diseño de la interfaz quiere otra cosa.
