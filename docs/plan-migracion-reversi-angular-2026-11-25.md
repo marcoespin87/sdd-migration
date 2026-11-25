@@ -112,7 +112,7 @@ Decisiones técnicas de la F4 para aprobar en su gate. Lo observable del idioma 
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
 | F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | mergeada a `develop` |
 | F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | mergeada a `develop` |
-| F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | en curso (propuesta) |
+| F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | construida; pendiente de verificación y cierre |
 
 Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualizado con la anterior.
 
@@ -140,11 +140,11 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - [ ] Partida completa en el navegador (CA-28, manual; lo ejecuta el usuario).
 
 **F4 — i18n y cierre** (rama `migrate/partida-reversi-i18n`)
-- [ ] `public/i18n/es.json` y las tres claves nuevas en ambos catálogos (cubre CA-30, CA-32).
-- [ ] Selector de idioma en `ControlsComponent`, `availableLangs` con `en` y `es` y `lang` del documento (cubre CA-31).
-- [ ] Prueba de "no hay texto literal" con el idioma sintético (cubre CA-30).
-- [ ] Aviso de atribución en los `.ts`, `.html` y `.css` de `src/` que no lo tienen (cubre CA-33). Comentarios sin comportamiento: sin prueba previa.
-- [ ] README del port con ejecución, `--base-href`, catálogo y `100vh`. Documentación: sin prueba previa.
+- [x] `public/i18n/es.json` y las tres claves nuevas en ambos catálogos (cubre CA-30, CA-32).
+- [x] Selector de idioma en `ControlsComponent`, `availableLangs` con `en` y `es` y `lang` del documento (cubre CA-31).
+- [x] Prueba de "no hay texto literal" con el idioma sintético (cubre CA-30).
+- [x] Aviso de atribución en los `.ts`, `.html` y `.css` de `src/` que no lo tienen (cubre CA-33). Comentarios sin comportamiento: sin prueba previa.
+- [x] README del port con ejecución, `--base-href`, catálogo y `100vh`. Documentación: sin prueba previa.
 - [ ] Verificación final y cierre: build y pruebas completas, legacy intacto, `npm audit`, spec a `desplegado` y plan a `destilado` (cubre CA-34, CA-35, CA-36).
 
 ## Criterios de aceptación
@@ -237,6 +237,13 @@ Ninguno.
 
 ## Ajustes durante la construcción
 Ninguno en el spec.
+
+Detalles de implementación de la Fase 4 respecto al diseño aprobado (no cambian el spec):
+- `i18n/languages.ts` centraliza los códigos de idioma, la clave del nombre de cada uno y el idioma de arranque (`en`); la configuración de Transloco de la aplicación los toma de ahí.
+- El banco de pruebas de la interfaz configura Transloco con `reRenderOnLangChange: true`, igual que la aplicación; sin eso los textos no se redibujaban al cambiar de idioma en las pruebas (y el hallazgo confirma que esa opción es necesaria en `app.config.ts`).
+- La prueba de "no hay texto literal" usa un catálogo sintético (`pseudoCatalog`) y comprueba texto visible y atributos accesibles (`aria-label`, `title`, `alt`, `placeholder`). Incluye ahora el `aria-label` del selector de dificultad (`ui.level`) y el del selector de idioma (`ui.language`).
+- Prettier reformateó `src/main.ts` (plantilla del CLI) al agregarle el encabezado de atribución.
+- Comprobación extra en un navegador real (`ng serve`, Playwright): abre en inglés con `lang="en"`; tras jugar una casilla, el selector real cambió a español y tradujo al instante el mensaje, los botones, las etiquetas y la dificultad, con `lang="es"` y la partida intacta; la jugada de la computadora salió ya en español; de vuelta a inglés todo se tradujo; sin errores ni avisos en consola.
 
 Detalles de implementación de la Fase 3 respecto al diseño aprobado (no cambian el spec):
 - `colors.ts` quedó en `ui/` y las pruebas de la interfaz comparten `ui/test-utils.ts` (banco de pruebas con el catálogo real `public/i18n/en.json`, reloj simulado y un `ResizeObserver` de prueba). `tsconfig.json` habilita `resolveJsonModule` y `tsconfig.app.json` excluye los `test-utils.ts` del build.
