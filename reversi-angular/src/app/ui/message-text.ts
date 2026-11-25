@@ -12,15 +12,36 @@ export interface TextRef {
   readonly params: Readonly<Record<string, number>>;
 }
 
-// Esqueleto (CA-24, CA-27): comportamiento por implementar.
-export function toText(_message: GameMessage): TextRef {
-  throw new Error('no implementado');
+/** Mensajes cuyo texto depende de la cantidad de fichas volteadas. */
+const WITH_PLURAL: ReadonlySet<string> = new Set(['userMove', 'computerMove']);
+
+/**
+ * Convierte un mensaje del juego en una clave del catalogo. Con cantidad, exactamente 1 volteo usa la
+ * forma `one` ("one reversed position") y cualquier otra cantidad la forma `other` ("N reverses").
+ */
+export function toText(message: GameMessage): TextRef {
+  const params = message.params ?? {};
+  if (WITH_PLURAL.has(message.key)) {
+    return { key: `${message.key}.${params['count'] === 1 ? 'one' : 'other'}`, params };
+  }
+  return { key: message.key, params };
 }
 
-export function windowWarning(_layout: BoardLayout): TextRef | null {
-  throw new Error('no implementado');
+/**
+ * Aviso de ventana sin espacio suficiente. Si faltan filas y columnas a la vez se informa el de
+ * filas, como en el legacy, donde el segundo mensaje pisaba al primero.
+ */
+export function windowWarning(layout: BoardLayout): TextRef | null {
+  if (layout.tooShortRows !== null) {
+    return { key: 'tooShort', params: { rows: layout.tooShortRows } };
+  }
+  if (layout.tooNarrowColumns !== null) {
+    return { key: 'tooNarrow', params: { cols: layout.tooNarrowColumns } };
+  }
+  return null;
 }
 
-export function lineText(_message: GameMessage, _warning: TextRef | null): TextRef {
-  throw new Error('no implementado');
+/** Texto de la linea de mensaje: el aviso tiene prioridad; sin aviso, el ultimo mensaje del juego. */
+export function lineText(message: GameMessage, warning: TextRef | null): TextRef {
+  return warning ?? toText(message);
 }
