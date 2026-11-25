@@ -27,7 +27,7 @@ Controles y elementos observables de la pantalla:
 | Botón *Skip Turn* | Clic | Cede el turno a la computadora (ver Flujo). `[Inferido del código]` |
 | Tablero | Mover el mouse | Resalta la casilla bajo el cursor si es una jugada legal del usuario. `[Confirmado por docs]` |
 | Tablero | Clic en una casilla | Intenta jugar en ella (ver Flujo). `[Confirmado por docs]` |
-| Línea de mensaje | — | Muestra el último mensaje de estado (ver Mensajes). `[Inferido del código]` |
+| Línea de mensaje | — | Muestra el último mensaje de estado (ver Flujo; los textos exactos están en Referencias). `[Inferido del código]` |
 
 Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y español, con un selector de idioma. `[Corregido en revisión]`
 
@@ -40,6 +40,9 @@ Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y españo
 **Inicio de partida.**
 - El tablero parte vacío salvo un cuadrado central de 2×2 ubicado en la fila `filas/2 - 1` y columna `columnas/2 - 1` (base 0): la computadora ocupa la diagonal principal (superior izquierda e inferior derecha) y el usuario la antidiagonal. `[Inferido del código]`
 - El turno inicial es del usuario. `[Confirmado por docs]`
+- Al abrir la pantalla, la línea de mensaje muestra un texto de créditos y licencia ("Reversi or Othello", copyright de Keith Fenske, GNU Public License) en lugar de las instrucciones. `[Inferido del código]`
+- Con *New Game* se muestra el mensaje de instrucciones (hacer clic en una casilla; el usuario es el jugador oscuro). `[Inferido del código]`
+- Al cambiar filas o columnas se muestra el mensaje "nuevo tablero de R filas por C columnas" con los valores vigentes. `[Inferido del código]`
 - Al iniciar una partida (al abrir, con *New Game* o al cambiar el tamaño) se evalúa si ya terminó. En un tablero de 2×2 nadie puede mover y la partida termina de inmediato, mostrando el resultado; en cualquier otro tamaño permitido hay jugadas disponibles al inicio. `[Inferido del código]`
 
 **Turno del usuario (clic en el tablero).** Se evalúa en este orden y se aplica el primer caso que corresponda: `[Inferido del código]`
@@ -96,6 +99,8 @@ Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y españo
 - 2026-11-25: se conservan las esperas y el parpadeo de la computadora, y los valores de filas/columnas del legacy — *Porqué: decisión del usuario.*
 - 2026-11-25: se corrigen tres defectos del legacy (interfaz congelada al saltar turno, jugada pendiente sobre una partida nueva, resaltado que persiste al salir del tablero) — *Porqué: decisión del usuario; el comportamiento correcto ya está descrito arriba y lo cubre la migración a Angular.*
 - 2026-11-25: los mensajes se internacionalizan en inglés y español — *Porqué: decisión del usuario.*
+- 2026-11-25: la capacidad se migra de `Reversi2.java` a Angular 21 (capas `domain`, `game`, `ui`; Vitest; Transloco; tablero en DOM con layout calculado por las mismas fórmulas del legacy), sin cambiar lo que este spec describe — *Porqué: el applet Java 1.1 ya no corre en navegadores; ver `docs/adr/0001-stack-angular-21.md`.*
+- 2026-11-25: se agregan a *Flujo* dos omisiones del baseline (mensaje inicial de créditos y mensaje de nuevo tamaño) y se ajustan dos textos que ya no son ciertos: se retira la mención al applet ("Java applet", "Applet window") y "black circles" pasa a "dark pieces" (las fichas son rectángulos redondeados oscuros) — *Porqué: son comportamiento del legacy que el baseline no describió y sin ellos la paridad no se puede verificar; la referencia al applet deja de ser cierta en la versión web.*
 
 ## Fuera de alcance
 - Niveles *Hard* y *Expert*: el legacy tiene ganchos no seleccionables que repiten el comportamiento de *Medium*; no se ofrecen ni se describen.
@@ -105,8 +110,9 @@ Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y españo
 
 ## Referencias
 - Historias: ninguna (el código legacy no nació de historias de usuario).
-- Código: `reversi-game-java-main/Reversi2.java` (lógica y tablero en `Reversi2`; lienzo en `Reversi2Board`).
+- Código: `reversi-game-java-main/Reversi2.java` (lógica y tablero en `Reversi2`; lienzo en `Reversi2Board`). Versión Angular: `reversi-angular/` (`src/app/domain`, `src/app/game`, `src/app/ui`).
 - Documentación de origen: `reversi-game-java-main/README.md`, comentario de cabecera de `Reversi2.java`, `reversi-game-java-main/revers2a.htm`.
-- Tests: ninguno en el legacy.
-- Textos exactos de los mensajes: `Reversi2.java` (constantes `beginMessage` y `skipMessage` y llamadas a `messageText.setText`).
+- Tests: ninguno en el legacy. Versión Angular: `reversi-angular/src/app/**/*.spec.ts` (Vitest).
+- Textos exactos de los mensajes: `Reversi2.java` (constantes `beginMessage` y `skipMessage` y llamadas a `messageText.setText`). Versión Angular: catálogos en `reversi-angular/public/i18n/en.json` y `es.json`.
+- ADR: `docs/adr/0001-stack-angular-21.md`.
 - Licencia del código original: GPLv3+ (`reversi-game-java-main/LICENSE`).
