@@ -66,7 +66,7 @@ La regla de singular/plural del legacy es: exactamente 1 volteo usa la forma `on
 ## Mapa de ramas
 | Fase | Rama | Depende de | Spec(s) | Estado |
 |---|---|---|---|---|
-| F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | construida; pendiente de verificación |
+| F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | verificada; pendiente de merge |
 | F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | pendiente |
 | F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | pendiente |
 | F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | pendiente |
@@ -143,18 +143,18 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 ## Trazabilidad
 | Criterio | Sección del spec | Prueba | Resultado |
 |---|---|---|---|
-| CA-01 | Flujo · Inicio de partida | `domain/board.spec.ts` | pendiente |
-| CA-02 | Flujo · Reglas | `domain/rules.spec.ts` | pendiente |
-| CA-03 | Flujo · Reglas | `domain/rules.spec.ts` | pendiente |
-| CA-04 | Invariantes · Una jugada legal voltea al menos una ficha | `domain/rules.spec.ts` | pendiente |
-| CA-05 | Flujo · Reglas | `domain/rules.spec.ts` | pendiente |
-| CA-06 | Flujo · Inicio de partida | `domain/rules.spec.ts` | pendiente |
-| CA-07 | Límites y defaults · Easy | `domain/ai.spec.ts` | pendiente |
-| CA-08 | Límites y defaults · Medium; Invariantes · computadora siempre legal | `domain/ai.spec.ts` | pendiente |
-| CA-09 | Límites y defaults · tamaño, valores y dificultad | `domain/board.spec.ts` | pendiente |
-| CA-10 | Límites y defaults · Dibujo del tablero | `domain/layout.spec.ts` | pendiente |
-| CA-11 | Límites y defaults · clic dentro de la ficha | `domain/layout.spec.ts` | pendiente |
-| CA-12 | Modos de falla · espacio insuficiente | `domain/layout.spec.ts` | pendiente |
+| CA-01 | Flujo · Inicio de partida | `domain/board.spec.ts` | ✅ 2026-11-25 |
+| CA-02 | Flujo · Reglas | `domain/rules.spec.ts` | ✅ 2026-11-25 |
+| CA-03 | Flujo · Reglas | `domain/rules.spec.ts` | ✅ 2026-11-25 |
+| CA-04 | Invariantes · Una jugada legal voltea al menos una ficha | `domain/rules.spec.ts` | ✅ 2026-11-25 |
+| CA-05 | Flujo · Reglas | `domain/rules.spec.ts` | ✅ 2026-11-25 |
+| CA-06 | Flujo · Inicio de partida | `domain/rules.spec.ts` | ✅ 2026-11-25 |
+| CA-07 | Límites y defaults · Easy | `domain/ai.spec.ts` | ✅ 2026-11-25 |
+| CA-08 | Límites y defaults · Medium; Invariantes · computadora siempre legal | `domain/ai.spec.ts` | ✅ 2026-11-25 |
+| CA-09 | Límites y defaults · tamaño, valores y dificultad | `domain/board.spec.ts` | ✅ 2026-11-25 |
+| CA-10 | Límites y defaults · Dibujo del tablero | `domain/layout.spec.ts` | ✅ 2026-11-25 |
+| CA-11 | Límites y defaults · clic dentro de la ficha | `domain/layout.spec.ts` | ✅ 2026-11-25 |
+| CA-12 | Modos de falla · espacio insuficiente | `domain/layout.spec.ts` | ✅ 2026-11-25 |
 | CA-13 | Flujo · Turno del usuario | `game/game.service.spec.ts` | pendiente |
 | CA-14 | Flujo · Skip Turn | `game/game.service.spec.ts` | pendiente |
 | CA-15 | Flujo · Turno de la computadora; Límites · tiempos | `game/game.service.spec.ts` | pendiente |
@@ -184,4 +184,9 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 Ninguno.
 
 ## Ajustes durante la construcción
-Ninguno.
+Ninguno en el spec.
+
+Seguimientos que dejó la verificación de la Fase 1 (no son ajustes del spec):
+- **F3:** si faltan columnas y filas a la vez, el legacy muestra solo el mensaje de filas ("too short"); `computeLayout` informa ambos indicadores, y la interfaz decide la precedencia para igualar al legacy.
+- **F3:** `hitTest` devuelve `NaN` si recibe coordenadas `NaN`; los eventos reales del mouse siempre dan números.
+- **Pendiente de verificación global:** `npm audit` y licencias de dependencias transitivas (requieren red).
