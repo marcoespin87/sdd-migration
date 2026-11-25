@@ -8,10 +8,10 @@
 `reversi-game-java-main/Reversi2.java` es un applet Java 1.1 AWT de un solo archivo (estado, reglas, IA y vista mezclados, con un hilo auxiliar sin sincronizar). `docs/specs/spec-partida-reversi.md` describe su comportamiento (baseline del Caso 5, ya mergeado) y ya incluye el comportamiento correcto de tres defectos del legacy: interfaz congelada al saltar turno (A), jugada pendiente sobre una partida nueva (B) y resaltado persistente (C). El stack destino está decidido en `docs/adr/0001-stack-angular-21.md`. Este plan reescribe la capacidad `partida-reversi` en `reversi-angular/`, por fases, sin cambiar lo que el spec promete.
 
 ## Delta
-NULO sobre lo que el spec promete. El legacy incumple A, B y C; el port los cumple por diseño. Las únicas adiciones al texto del spec son dos omisiones del baseline (mensaje inicial de créditos y mensaje de nuevo tamaño), que ya eran comportamiento del legacy.
+NULO sobre lo que el spec promete. El legacy incumple A, B y C; el port los cumple por diseño. Las únicas adiciones al texto del spec son dos omisiones del baseline (mensaje inicial de créditos y mensaje de nuevo tamaño), que ya eran comportamiento del legacy. En la Fase 3 hay un ajuste menor decidido por el usuario: el aviso de ventana angosta o baja ya no deja la línea vacía al desaparecer, sino que vuelve el último mensaje del juego (escrito en el spec).
 
 ## Delta del spec escrito
-`spec-partida-reversi.md`: tres entradas en *Decisiones* (migración a Angular, omisiones del baseline y ajuste de dos textos) y *Referencias* nuevas (código, tests, catálogos i18n y ADR). En *Flujo / Inicio de partida* se agregaron tres ítems que el baseline omitió (mensaje inicial, mensaje de *New Game*, mensaje de nuevo tamaño). El resto de *Comportamiento* e *Invariantes* no se tocó.
+`spec-partida-reversi.md`: tres entradas en *Decisiones* (migración a Angular, omisiones del baseline y ajuste de dos textos) y *Referencias* nuevas (código, tests, catálogos i18n y ADR). En *Flujo / Inicio de partida* se agregaron tres ítems que el baseline omitió (mensaje inicial, mensaje de *New Game*, mensaje de nuevo tamaño). En la Fase 3 se reescribió el primer ítem de *Modos de falla* (aviso de ventana) y se agregó una entrada en *Decisiones*. El resto de *Comportamiento* e *Invariantes* no se tocó.
 
 ## Decisiones tomadas y enfoque técnico
 - **Estrategia:** el sistema tiene una sola capacidad, así que la migración va **por fases dentro de ella**, de lo más aislado (lógica pura) a lo más expuesto (interfaz). Cada fase es su propio cambio acotado, con su rama, su ciclo y su merge a `develop`. Un solo plan padre.
@@ -77,12 +77,26 @@ Decisiones técnicas de la F2 para aprobar en su gate. No cambian lo que promete
 - **Orden del clic del usuario** (igual al spec): partida terminada, no es su turno, sin jugadas disponibles, fuera de ficha, casilla ocupada, jugada sin volteos, jugada legal. Los seis rechazos no tocan el tablero.
 - **Fuera de esta fase:** los mensajes de ventana angosta o baja (dependen del layout y de la precedencia que decida F3), el catálogo en español y los componentes.
 
+### Diseño de la interfaz (Fase 3)
+Decisiones técnicas de la F3 para aprobar en su gate. Lo que cambia respecto del legacy está en el spec (ver *Modos de falla* y *Decisiones*).
+
+- **Estructura `src/app/ui/`** (dependencia en un solo sentido, `ui` → `game` → `domain`; la UI no decide reglas): `controls.component.ts` (dificultad, filas, columnas, *New Game*, *Skip Turn*), `message-line.component.ts`, `board.component.ts`, `element-size.directive.ts`, `colors.ts` y `message-text.ts`. `app.component.*` pasa a componer estas piezas y se reemplaza el HTML de plantilla del CLI.
+- **Medición del espacio.** `BoardComponent` recibe `width` y `height` como entradas; una directiva `element-size` los mide en el navegador con `ResizeObserver` sobre el contenedor. En las pruebas (jsdom no tiene layout ni `ResizeObserver`) las entradas se fijan a mano; el redimensionamiento real lo cubre CA-28.
+- **Mouse.** Las coordenadas del evento se convierten a coordenadas del tablero con `getBoundingClientRect()` del contenedor y se pasan a `hitTest`. `mousemove` → `pointerAt(posición | null)`; `mouseleave` → `pointerAt(null)` (fix C); `click` → `click(posición | null)`. La UI solo entrega al servicio posiciones que salen de `hitTest` y, en los selectores, valores de `ALLOWED_SIZES` y `LEVELS` (el servicio no valida sus entradas).
+- **Pintado.** Contenedor con el ancho y alto medidos, fondo rosa; las líneas de la cuadrícula son `filas + 1` y `columnas + 1` elementos de `gridLine` px; cada casilla es un cuadrado de `symbolSize` px con `border-radius` igual a `cornerRadius`. Los colores del spec viven como constantes en `colors.ts` y se aplican como estilo en línea (jsdom no calcula variables CSS): computadora cian, usuario gris oscuro, casilla resaltada o parpadeando azul, casilla vacía del color del fondo.
+- **Aviso de ventana (decisión del usuario).** Se calcula a partir del layout: si `tooShortRows` no es nulo, aviso de filas; si no, y `tooNarrowColumns` no es nulo, aviso de columnas. La línea de mensaje muestra el aviso con prioridad y, al desaparecer, vuelve a mostrar el último mensaje del juego.
+- **Plurales.** `message-text.ts` convierte un `GameMessage` en clave de catálogo y parámetros: para `userMove` y `computerMove` usa `userMove.one` / `computerMove.one` si `count === 1` y `.other` en cualquier otro caso. El español y el selector de idioma son de la F4.
+- **i18n.** Primera dependencia nueva: `@jsverse/transloco` 8.4.0 (MIT, peer `@angular/core >=16`), con inglés como idioma por defecto y el catálogo en `public/i18n/en.json`. Las plantillas no llevan texto literal. En pruebas se carga el mismo archivo con un cargador de prueba, para que F4 pueda comparar `en` y `es`.
+- **Página.** Título de la pestaña: "Reversi or Othello". Disposición como el legacy: fila de controles arriba (dificultad, filas, columnas y los dos botones), debajo la línea de mensaje centrada y el tablero ocupando el resto; fondo de página rosa.
+- **CA-28 manual.** Se arranca `ng serve` y se juegan las dos partidas; puedo ayudar con capturas del navegador, pero el resultado lo confirma el usuario.
+- **Fuera de esta fase:** selector de idioma, `es.json`, plurales en español, atribución en cada archivo (CA-33) y el recuento final de textos (CA-30).
+
 ## Mapa de ramas
 | Fase | Rama | Depende de | Spec(s) | Estado |
 |---|---|---|---|---|
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
-| F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | verificada; pendiente de merge |
-| F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | pendiente |
+| F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | mergeada a `develop` |
+| F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | en curso (propuesta) |
 | F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | pendiente |
 
 Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualizado con la anterior.
@@ -103,7 +117,12 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - [x] Partidas completas simuladas con semillas (cubre CA-23).
 
 **F3 — Interfaz y tablero** (rama `migrate/partida-reversi-ui`)
-- [ ] Componentes de controles, mensaje y tablero con Transloco y catálogo en inglés (cubre CA-24, CA-25, CA-26, CA-27, CA-28, CA-29).
+- [ ] Instalar `@jsverse/transloco` y configurarlo (inglés por defecto, catálogo `public/i18n/en.json`); título de la página. Configuración sin comportamiento propio: sin prueba previa.
+- [ ] `ui/colors.ts`, `ui/message-text.ts` y `ui/element-size.directive.ts` (colores del spec, clave de catálogo y plural, medición con `ResizeObserver`). Soporte: se prueba a través de las demás tareas.
+- [ ] `ui/controls.component`: selectores y botones con textos del catálogo (cubre CA-24).
+- [ ] `ui/board.component`: pintado, mouse y recálculo al cambiar el tamaño (cubre CA-25, CA-26, CA-27).
+- [ ] `ui/message-line.component` y `app.component`: aviso de ventana con prioridad, composición y reemplazo de la plantilla del CLI (cubre CA-27, CA-29).
+- [ ] Partida completa en el navegador (CA-28, manual; lo ejecuta el usuario).
 
 **F4 — i18n y cierre** (rama `migrate/partida-reversi-i18n`)
 - [ ] Catálogo en español, selector de idioma, plurales (cubre CA-30, CA-31, CA-32).
@@ -139,10 +158,10 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - **CA-23** (invariante) En partidas completas simuladas con semillas fijas, toda jugada de la computadora es legal, el usuario siempre mueve primero y la partida termina. Verificación: automática — `…/game/game.service.spec.ts::CA-23 partidas simuladas`
 
 **F3 — Interfaz y tablero**
-- **CA-24** La pantalla muestra el selector de dificultad (Easy y Medium, Medium por defecto), los selectores de filas y columnas con los valores permitidos y sus defaults, los botones *New Game* y *Skip Turn* y la línea de mensaje. Verificación: automática (prueba de componente) — `…/ui/controls.component.spec.ts::CA-24 controles`
+- **CA-24** La pantalla muestra el selector de dificultad (Easy y Medium, Medium por defecto), los selectores de filas y columnas con los valores permitidos y sus defaults, los botones *New Game* y *Skip Turn* y la línea de mensaje, con sus textos tomados del catálogo en inglés. Verificación: automática (prueba de componente) — `…/ui/controls.component.spec.ts::CA-24 controles`
 - **CA-25** El tablero muestra filas × columnas casillas con los colores del spec según su estado (fondo, línea de cuadrícula, usuario, computadora, resaltada) y fichas de esquinas redondeadas. Verificación: automática (prueba de componente) — `…/ui/board.component.spec.ts::CA-25 colores y casillas`
-- **CA-26** El movimiento del mouse y el clic sobre una ficha se traducen a la casilla correcta; un clic en el borde interior o fuera de la ficha produce el mensaje de "hacer clic en una casilla". Verificación: automática (prueba de componente) — `…/ui/board.component.spec.ts::CA-26 mouse y clic`
-- **CA-27** Al cambiar el tamaño disponible el tablero se recalcula con el layout del dominio y se muestra/borra el mensaje de ventana angosta o baja. Verificación: automática (prueba de componente) — `…/ui/board.component.spec.ts::CA-27 redimensionar`
+- **CA-26** El movimiento del mouse y el clic sobre una ficha se traducen a la casilla correcta; un clic en el borde interior o fuera de la ficha produce el mensaje de "hacer clic en una casilla"; al salir el cursor del tablero se avisa al servicio y desaparece el resaltado. Verificación: automática (prueba de componente) — `…/ui/board.component.spec.ts::CA-26 mouse y clic`
+- **CA-27** Al cambiar el tamaño disponible el tablero se recalcula con el layout del dominio; si no caben las filas o las columnas se muestra el aviso con prioridad sobre el mensaje del juego (si faltan ambas, el de filas) y, al volver a haber espacio, el aviso desaparece y la línea muestra otra vez el último mensaje del juego. Verificación: automática (prueba de componente) — `…/ui/board.component.spec.ts::CA-27 redimensionar`
 - **CA-28** Se juega una partida completa en el navegador (6×10 y 8×8, dificultad Medium): resaltado, jugada, parpadeo de la computadora y mensaje final correctos. Verificación: manual — pasos: `ng serve`, jugar las dos partidas, anotar resultado y captura; lo ejecuta el usuario.
 - **CA-29** (fix A) Con la computadora parpadeando, los botones y selectores responden; *New Game* funciona y cancela la jugada. Verificación: automática (prueba de componente, reloj simulado) — `…/ui/app.component.spec.ts::CA-29 interfaz responde`
 

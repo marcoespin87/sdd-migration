@@ -81,7 +81,8 @@ Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y españo
 - Un clic cuenta como clic sobre una casilla solo si cae dentro de la ficha dibujada; el borde interior de la casilla y las líneas de cuadrícula no cuentan. `[Inferido del código]`
 
 ### Modos de falla
-- Si el espacio disponible es demasiado angosto o bajo para mostrar todas las columnas o filas, se muestra un mensaje que lo indica y el tablero se dibuja igualmente con el tamaño mínimo; el mensaje se borra al volver a dibujar con espacio suficiente. `[Inferido del código]`
+- Si el espacio disponible es demasiado angosto o bajo para mostrar todas las columnas o filas, se muestra un aviso que lo indica y el tablero se dibuja igualmente con el tamaño mínimo. `[Inferido del código]`
+- El aviso tiene prioridad sobre el mensaje del juego mientras falte espacio; si faltan columnas y filas a la vez, se informa el de filas. Al volver a haber espacio suficiente el aviso desaparece y la línea vuelve a mostrar el último mensaje del juego. `[Corregido en revisión]`
 - Las acciones no permitidas (clic fuera de turno, casilla ocupada, jugada sin volteos, etc.) no cambian el tablero; solo muestran el mensaje correspondiente. `[Inferido del código]`
 
 ## Invariantes (no negociables)
@@ -99,6 +100,7 @@ Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y españo
 - 2026-11-25: se conservan las esperas y el parpadeo de la computadora, y los valores de filas/columnas del legacy — *Porqué: decisión del usuario.*
 - 2026-11-25: se corrigen tres defectos del legacy (interfaz congelada al saltar turno, jugada pendiente sobre una partida nueva, resaltado que persiste al salir del tablero) — *Porqué: decisión del usuario; el comportamiento correcto ya está descrito arriba y lo cubre la migración a Angular.*
 - 2026-11-25: los mensajes se internacionalizan en inglés y español — *Porqué: decisión del usuario.*
+- 2026-11-25: el aviso de ventana angosta o baja tiene prioridad sobre el mensaje del juego y, al desaparecer, la línea vuelve a mostrar el último mensaje del juego en lugar de quedar vacía como en el legacy; si faltan columnas y filas a la vez se informa el de filas, como en el legacy — *Porqué: decisión del usuario; así no se pierde el mensaje del juego al redimensionar la ventana.*
 - 2026-11-25: la capacidad se migra de `Reversi2.java` a Angular 21 (capas `domain`, `game`, `ui`; Vitest; Transloco; tablero en DOM con layout calculado por las mismas fórmulas del legacy), sin cambiar lo que este spec describe — *Porqué: el applet Java 1.1 ya no corre en navegadores; ver `docs/adr/0001-stack-angular-21.md`.*
 - 2026-11-25: se agregan a *Flujo* dos omisiones del baseline (mensaje inicial de créditos y mensaje de nuevo tamaño) y se ajustan dos textos que ya no son ciertos: se retira la mención al applet ("Java applet", "Applet window") y "black circles" pasa a "dark pieces" (las fichas son rectángulos redondeados oscuros) — *Porqué: son comportamiento del legacy que el baseline no describió y sin ellos la paridad no se puede verificar; la referencia al applet deja de ser cierta en la versión web.*
 
