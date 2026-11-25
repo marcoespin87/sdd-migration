@@ -4,6 +4,7 @@
  */
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TranslocoService } from '@jsverse/transloco';
 import { ControlsComponent } from './controls.component';
 import { configureUi } from './test-utils';
 
@@ -72,6 +73,43 @@ describe('controls', () => {
     level.value = 'easy';
     level.dispatchEvent(new Event('change'));
     expect(game.level()).toBe('easy');
+  });
+
+  it('CA-31 el selector de idioma ofrece English y Español, con inglés seleccionado al abrir', async () => {
+    const { fixture } = await render();
+    const lang = select(fixture, 'lang');
+    expect(options(lang)).toEqual([
+      { value: 'en', text: 'English' },
+      { value: 'es', text: 'Español' },
+    ]);
+    expect(lang.value).toBe('en');
+    expect(TestBed.inject(TranslocoService).getActiveLang()).toBe('en');
+  });
+
+  it('CA-31 al elegir español se traducen los controles y los idiomas siguen nombrados en su lengua', async () => {
+    const { fixture } = await render();
+    const lang = select(fixture, 'lang');
+    lang.value = 'es';
+    lang.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(TestBed.inject(TranslocoService).getActiveLang()).toBe('es');
+    expect((button(fixture, 'new-game').textContent ?? '').trim()).toBe('Nueva partida');
+    expect((button(fixture, 'skip-turn').textContent ?? '').trim()).toBe('Saltar turno');
+    expect(options(select(fixture, 'level')).map((o) => o.text)).toEqual(['Fácil', 'Medio']);
+    expect(select(fixture, 'level').getAttribute('aria-label')).toBe('Dificultad');
+    expect(options(select(fixture, 'lang')).map((o) => o.text)).toEqual(['English', 'Español']);
+    const labels = [...fixture.nativeElement.querySelectorAll('label')].map((l) =>
+      ((l as HTMLElement).textContent ?? '').replace(/\s+/g, ' ').trim(),
+    );
+    expect(labels.some((t) => t.startsWith('Filas:'))).toBe(true);
+    expect(labels.some((t) => t.startsWith('Columnas:'))).toBe(true);
+
+    lang.value = 'en';
+    lang.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect((button(fixture, 'new-game').textContent ?? '').trim()).toBe('New Game');
   });
 
   it('CA-24 los botones New Game y Skip Turn accionan el servicio', async () => {

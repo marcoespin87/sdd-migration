@@ -1,0 +1,40 @@
+{
+  "ui": {
+    "level": "Dificultad",
+    "easy": "Fácil",
+    "medium": "Medio",
+    "rows": "Filas: ",
+    "columns": "Columnas: ",
+    "newGame": "Nueva partida",
+    "skipTurn": "Saltar turno",
+    "language": "Idioma",
+    "langEn": "English",
+    "langEs": "Español",
+    "title": "Reversi u Othello"
+  },
+  "credits": "Reversi u Othello.  Copyright (c) 2004 de Keith Fenske.  Licencia Pública GNU.",
+  "begin": "Haz clic en la casilla que elijas.  Tú juegas con las fichas oscuras.",
+  "mustSkip": "No puedes mover; pulsa el botón «Saltar turno».",
+  "skipNotYourTurn": "¡Pero es el turno de la computadora!",
+  "skipNoGame": "Debes iniciar una partida nueva antes de saltar tu turno.",
+  "gameFinished": "La partida terminó.  Debes iniciar una partida nueva para volver a mover.",
+  "notYourTurn": "Lo siento, no es tu turno.  La computadora está pensando.",
+  "clickPosition": "Haz clic en una casilla del tablero.",
+  "occupied": "Lo siento, esa casilla ya fue elegida.",
+  "invalidMove": "Elige una casilla vacía que voltee al menos una ficha de la computadora.",
+  "userMove": {
+    "one": "Tu jugada es la fila {{row}} y la columna {{col}}, con una ficha volteada.",
+    "other": "Tu jugada es la fila {{row}} y la columna {{col}}, con {{count}} fichas volteadas."
+  },
+  "computerMove": {
+    "one": "La jugada de la computadora es la fila {{row}} y la columna {{col}}, con una ficha volteada.",
+    "other": "La jugada de la computadora es la fila {{row}} y la columna {{col}}, con {{count}} fichas volteadas."
+  },
+  "newBoard": "El nuevo tablero tiene {{rows}} filas por {{cols}} columnas.",
+  "tooNarrow": "La ventana es demasiado angosta para mostrar {{cols}} columnas.",
+  "tooShort": "La ventana es demasiado baja para mostrar {{rows}} filas.",
+  "computerCantMove": "La computadora no puede mover, así que es tu turno otra vez.",
+  "endComputerWins": "Nadie puede mover.  Gana la computadora, {{comp}} casillas contra tus {{user}}.",
+  "endUserWins": "Nadie puede mover.  Ganas con {{user}} casillas contra {{comp}} de la computadora.",
+  "endTie": "Nadie puede mover.  Empate: ambos tenemos {{count}} casillas."
+}

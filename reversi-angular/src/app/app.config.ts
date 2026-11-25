@@ -6,6 +6,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideTransloco } from '@jsverse/transloco';
+import { DEFAULT_LANGUAGE, LANGUAGES } from './i18n/languages';
 import { TranslocoHttpLoader } from './i18n/transloco-loader';
 
 export const appConfig: ApplicationConfig = {
@@ -14,8 +15,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     provideTransloco({
       config: {
-        availableLangs: ['en'],
-        defaultLang: 'en',
+        availableLangs: LANGUAGES.map((language) => language.code),
+        defaultLang: DEFAULT_LANGUAGE,
         reRenderOnLangChange: true,
         prodMode: !isDevMode(),
       },

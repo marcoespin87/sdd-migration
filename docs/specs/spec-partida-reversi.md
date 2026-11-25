@@ -1,6 +1,6 @@
 # Spec: Partida de Reversi
 
-**Estado:** en desarrollo · **Última revisión:** 2026-11-25
+**Estado:** desplegado · **Última revisión:** 2026-11-25
 
 ## Propósito
 Permitir que una persona juegue una partida de Reversi (Othello) contra la computadora en un tablero rectangular de tamaño configurable, con dos niveles de dificultad, viendo sus jugadas legales y recibiendo mensajes de estado en cada paso. Es un juego de un solo jugador humano, sin cuentas ni persistencia.
@@ -30,6 +30,8 @@ Controles y elementos observables de la pantalla:
 | Línea de mensaje | — | Muestra el último mensaje de estado (ver Flujo; los textos exactos están en Referencias). `[Inferido del código]` |
 
 Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y español, con un selector de idioma. `[Corregido en revisión]`
+
+Cambio de idioma: la aplicación siempre abre en inglés y la elección no se recuerda entre visitas. El selector nombra cada idioma en su propia lengua (English, Español). Cambiar de idioma traduce al instante todos los textos, incluido el último mensaje del juego, sin recargar y sin alterar la partida en curso (tablero, turno, jugada pendiente ni dificultad). `[Corregido en revisión]`
 
 ### Flujo
 **Reglas.**
@@ -100,6 +102,7 @@ Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y españo
 - 2026-11-25: se conservan las esperas y el parpadeo de la computadora, y los valores de filas/columnas del legacy — *Porqué: decisión del usuario.*
 - 2026-11-25: se corrigen tres defectos del legacy (interfaz congelada al saltar turno, jugada pendiente sobre una partida nueva, resaltado que persiste al salir del tablero) — *Porqué: decisión del usuario; el comportamiento correcto ya está descrito arriba y lo cubre la migración a Angular.*
 - 2026-11-25: los mensajes se internacionalizan en inglés y español — *Porqué: decisión del usuario.*
+- 2026-11-25: la aplicación siempre abre en inglés, sin recordar el idioma elegido ni tomar el del navegador — *Porqué: decisión del usuario; paridad con el legacy y con el idioma base del spec, de modo que la primera pantalla es siempre la misma.*
 - 2026-11-25: se corrige el ítem de dibujo del tablero: en el legacy el 65 % del paso es el **diámetro** del arco de las esquinas de la ficha (`fillRoundRect`), no su radio, de modo que el radio efectivo es el 32,5 % del paso — *Porqué: hallazgo de la verificación de la Fase 3; el baseline lo había leído como radio y el port dibujaba círculos en lugar de rectángulos redondeados.*
 - 2026-11-25: el aviso de ventana angosta o baja tiene prioridad sobre el mensaje del juego y, al desaparecer, la línea vuelve a mostrar el último mensaje del juego en lugar de quedar vacía como en el legacy; si faltan columnas y filas a la vez se informa el de filas, como en el legacy — *Porqué: decisión del usuario; así no se pierde el mensaje del juego al redimensionar la ventana.*
 - 2026-11-25: la capacidad se migra de `Reversi2.java` a Angular 21 (capas `domain`, `game`, `ui`; Vitest; Transloco; tablero en DOM con layout calculado por las mismas fórmulas del legacy), sin cambiar lo que este spec describe — *Porqué: el applet Java 1.1 ya no corre en navegadores; ver `docs/adr/0001-stack-angular-21.md`.*
@@ -113,7 +116,7 @@ Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y españo
 
 ## Referencias
 - Historias: ninguna (el código legacy no nació de historias de usuario).
-- Código: `reversi-game-java-main/Reversi2.java` (lógica y tablero en `Reversi2`; lienzo en `Reversi2Board`). Versión Angular: `reversi-angular/` (`src/app/domain`, `src/app/game`, `src/app/ui`).
+- Código: `reversi-game-java-main/Reversi2.java` (lógica y tablero en `Reversi2`; lienzo en `Reversi2Board`). Versión Angular: `reversi-angular/` (`src/app/domain`, `src/app/game`, `src/app/ui`, `src/app/i18n`).
 - Documentación de origen: `reversi-game-java-main/README.md`, comentario de cabecera de `Reversi2.java`, `reversi-game-java-main/revers2a.htm`.
 - Tests: ninguno en el legacy. Versión Angular: `reversi-angular/src/app/**/*.spec.ts` (Vitest).
 - Textos exactos de los mensajes: `Reversi2.java` (constantes `beginMessage` y `skipMessage` y llamadas a `messageText.setText`). Versión Angular: catálogos en `reversi-angular/public/i18n/en.json` y `es.json`.

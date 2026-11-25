@@ -5,17 +5,18 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { createBoard } from './domain/board';
+import en from '../../public/i18n/en.json';
 import { COLORS } from './ui/colors';
 import { App } from './app.component';
-import { StubResizeObserver, configureUi } from './ui/test-utils';
+import { StubResizeObserver, configureUi, pseudoCatalog } from './ui/test-utils';
 
 async function settle(fixture: ComponentFixture<unknown>) {
   fixture.detectChanges();
   await fixture.whenStable();
 }
 
-async function render() {
-  const { game, scheduler } = configureUi();
+async function render(options: Parameters<typeof configureUi>[0] = {}) {
+  const { game, scheduler } = configureUi(options);
   const fixture = TestBed.createComponent(App);
   await settle(fixture);
   const resize = async (width: number, height: number) => {
@@ -27,6 +28,27 @@ async function render() {
   const cells = () => root.querySelectorAll('.cell').length;
   const click = (selector: string) => (root.querySelector(selector) as HTMLElement).click();
   return { fixture, game, scheduler, resize, line, cells, click, root };
+}
+
+/** Todo el texto visible de la pantalla y el de sus atributos accesibles. */
+function visibleTexts(root: HTMLElement): string[] {
+  const texts: string[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim();
+    if (text) {
+      texts.push(text);
+    }
+  }
+  for (const element of root.querySelectorAll('*')) {
+    for (const attribute of ['aria-label', 'title', 'alt', 'placeholder']) {
+      const value = element.getAttribute(attribute);
+      if (value) {
+        texts.push(value.trim());
+      }
+    }
+  }
+  return texts;
 }
 
 const CREDITS = 'Reversi or Othello.  Copyright (c) 2004 by Keith Fenske.  GNU Public License.';
@@ -73,6 +95,71 @@ describe('App', () => {
     expect(line()).toBe('The window is too short to display 6 rows.');
     await resize(700, 500);
     expect(line()).toBe(played);
+  });
+
+  it('CA-30 sin texto literal: con un catálogo sintético, todo texto visible y todo atributo sale del catálogo', async () => {
+    const { root, resize } = await render({ langs: { qa: pseudoCatalog(en) }, defaultLang: 'qa' });
+    await resize(700, 500);
+    const texts = visibleTexts(root);
+    expect(texts.length).toBeGreaterThan(20); // controles, etiquetas, opciones, mensaje y atributos
+    const literals = texts.filter((t) => !/^(\d+|\[\[[\w.]+\]\])$/.test(t));
+    expect(literals).toEqual([]);
+    expect(texts).toContain('[[credits]]');
+    expect(texts).toContain('[[ui.newGame]]');
+    expect(texts).toContain('[[ui.level]]');
+    expect(texts).toContain('[[ui.langEn]]'); // el selector de idioma también sale del catálogo
+    expect(texts).toContain('[[ui.langEs]]');
+    expect(texts).toContain('[[ui.language]]'); // aria-label del selector de idioma
+    expect(document.title).toBe('[[ui.title]]'); // el título de la pestaña también sale del catálogo
+
+    // otro estado de mensaje: el aviso de ventana también sale del catálogo
+    await resize(100, 100);
+    const warning = visibleTexts(root);
+    expect(warning).toContain('[[tooShort]]');
+    expect(warning.filter((t) => !/^(\d+|\[\[[\w.]+\]\])$/.test(t))).toEqual([]);
+  });
+
+  it('CA-31 la aplicación abre en inglés y el atributo lang del documento lo refleja', async () => {
+    const { line } = await render();
+    expect(line()).toBe(CREDITS);
+    expect(document.documentElement.lang).toBe('en');
+    expect(document.title).toBe('Reversi or Othello');
+  });
+
+  it('CA-31 cambiar de idioma traduce al instante el último mensaje sin alterar la partida en curso', async () => {
+    const { fixture, game, scheduler, root, line } = await render();
+    game.setLevel('easy');
+    game.click({ row: 2, col: 3 }); // jugada legal: la computadora queda pensando
+    await settle(fixture);
+    const board = game.board();
+    expect(line()).toBe('Your move is row 3 and column 4 with one reversed position.');
+
+    const lang = root.querySelector('select#lang') as HTMLSelectElement;
+    lang.value = 'es';
+    lang.dispatchEvent(new Event('change'));
+    await settle(fixture);
+    expect(line()).toBe('Tu jugada es la fila 3 y la columna 4, con una ficha volteada.');
+    expect(document.documentElement.lang).toBe('es');
+    expect(document.title).toBe('Reversi u Othello'); // el título de la pestaña también se traduce
+    // la partida sigue exactamente igual
+    expect(game.board()).toBe(board);
+    expect(game.turn()).toBe('computer');
+    expect(game.level()).toBe('easy');
+
+    // la jugada pendiente de la computadora no se cancela y se muestra ya en español
+    scheduler.advance(1000);
+    await settle(fixture);
+    expect(line().startsWith('La jugada de la computadora es la fila')).toBe(true);
+    scheduler.advance(1800);
+    await settle(fixture);
+    expect(game.turn()).toBe('user');
+
+    lang.value = 'en';
+    lang.dispatchEvent(new Event('change'));
+    await settle(fixture);
+    expect(line().startsWith("Computer's move is row")).toBe(true);
+    expect(document.documentElement.lang).toBe('en');
+    expect(document.title).toBe('Reversi or Othello');
   });
 
   it('CA-24 la pantalla tiene el fondo rosa del juego', async () => {

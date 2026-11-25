@@ -3,7 +3,10 @@
  * Distribuido bajo la GNU General Public License, version 3 o posterior.
  */
 
+import { DOCUMENT } from '@angular/common';
 import { Component, computed, inject, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslocoService } from '@jsverse/transloco';
 import { GameService } from './game/game.service';
 import { BoardComponent } from './ui/board.component';
 import { COLORS } from './ui/colors';
@@ -25,6 +28,20 @@ export class App {
   private readonly board = viewChild(BoardComponent);
 
   protected readonly colors = COLORS;
+
+  constructor() {
+    // El atributo lang y el titulo del documento acompanan al idioma activo (lectores de pantalla,
+    // traductores, pestana del navegador).
+    const document = inject(DOCUMENT);
+    const transloco = inject(TranslocoService);
+    transloco.langChanges$
+      .pipe(takeUntilDestroyed())
+      .subscribe((lang) => (document.documentElement.lang = lang));
+    transloco
+      .selectTranslate('ui.title')
+      .pipe(takeUntilDestroyed())
+      .subscribe((title) => (document.title = title));
+  }
 
   /**
    * Texto de la linea de mensaje. El aviso de ventana sin espacio tiene prioridad sobre el mensaje del
