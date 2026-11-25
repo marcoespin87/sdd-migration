@@ -23,7 +23,7 @@ Migrar a **Angular 21** (Caso 4). La elección del stack, la estructura del proy
 - Angular 21: por definir en el ADR.
 
 ## Flujo de trabajo
-- **Tronco de integración:** `master`
+- **Tronco de integración:** `develop` (nace de `master`; `master` queda como rama estable y no recibe cambios directos)
 - **Ramas:** `<tipo>/<capacidad>-<slug>` (tipos: `init`, `feat`, `change`, `refactor`, `fix`, `migrate`, `baseline`, `arq`, `spec`, `hotfix`).
 - **Commits:** Conventional Commits con trailers `SDD-*`, hechos con `sdd-git.sh`.
 - **Merge:** local, con OK explícito tras `/sdd-verificacion`. Sin push, pull ni PR desde las skills.
