@@ -90,6 +90,12 @@ describe('GameService', () => {
       expect(game.turn()).toBe('user');
     });
 
+    it('CA-13 caso 3: el usuario sin jugadas tiene prioridad sobre un clic fuera de una ficha', () => {
+      const { game } = setup({ factory: fixedBoard(['.uc']) });
+      game.click(null);
+      expect(game.message()).toEqual({ key: 'mustSkip' });
+    });
+
     it('CA-13 caso 4: un clic fuera de una ficha pide hacer clic en una casilla', () => {
       const { game } = setup();
       const before = game.board();
@@ -326,6 +332,7 @@ describe('GameService', () => {
       game.click(LEGAL);
       scheduler.advance(1200);
       game.newGame();
+      expect(scheduler.pending).toBe(0); // los temporizadores cancelados se liberan
       scheduler.advance(10000);
       expect(game.message()).toEqual({ key: 'begin' });
     });
