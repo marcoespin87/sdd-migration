@@ -9,7 +9,8 @@
     "skipTurn": "Saltar turno",
     "language": "Idioma",
     "langEn": "English",
-    "langEs": "Español"
+    "langEs": "Español",
+    "title": "Reversi u Othello"
   },
   "credits": "Reversi u Othello.  Copyright (c) 2004 de Keith Fenske.  Licencia Pública GNU.",
   "begin": "Haz clic en la casilla que elijas.  Tú juegas con las fichas oscuras.",

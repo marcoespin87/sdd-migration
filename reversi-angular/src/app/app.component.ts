@@ -30,11 +30,17 @@ export class App {
   protected readonly colors = COLORS;
 
   constructor() {
-    // El atributo lang del documento acompana al idioma activo (lectores de pantalla, traductores).
+    // El atributo lang y el titulo del documento acompanan al idioma activo (lectores de pantalla,
+    // traductores, pestana del navegador).
     const document = inject(DOCUMENT);
-    inject(TranslocoService)
-      .langChanges$.pipe(takeUntilDestroyed())
+    const transloco = inject(TranslocoService);
+    transloco.langChanges$
+      .pipe(takeUntilDestroyed())
       .subscribe((lang) => (document.documentElement.lang = lang));
+    transloco
+      .selectTranslate('ui.title')
+      .pipe(takeUntilDestroyed())
+      .subscribe((title) => (document.title = title));
   }
 
   /**
