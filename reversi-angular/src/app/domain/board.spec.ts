@@ -32,6 +32,27 @@ describe('board', () => {
     }
   });
 
+  it('CA-01 posición inicial por tamaño: valores literales en 6x10, 4x4 y 2x2', () => {
+    const at = (rows: number, cols: number) => createBoard(rows, cols);
+    // 6x10: fila 2, columna 4 (base 0)
+    expect([at(6, 10)[2][4], at(6, 10)[2][5], at(6, 10)[3][4], at(6, 10)[3][5]]).toEqual([
+      'computer',
+      'user',
+      'user',
+      'computer',
+    ]);
+    expect([at(4, 4)[1][1], at(4, 4)[1][2], at(4, 4)[2][1], at(4, 4)[2][2]]).toEqual([
+      'computer',
+      'user',
+      'user',
+      'computer',
+    ]);
+    expect(at(2, 2)).toEqual([
+      ['computer', 'user'],
+      ['user', 'computer'],
+    ]);
+  });
+
   it('CA-01 posición inicial por tamaño: hay 64 combinaciones permitidas', () => {
     expect(ALLOWED_SIZES.length * ALLOWED_SIZES.length).toBe(64);
   });

@@ -30,6 +30,15 @@ describe('ai', () => {
     expect(last).toMatchObject({ row: 2, col: 0, flips: 1 });
   });
 
+  it('CA-07 easy: el índice es floor(azar × cantidad), no un redondeo (2 jugadas)', () => {
+    const board = boardFrom(['.uuc.', '.....', '.uc..']); // jugadas: (0,0) y (2,0)
+    expect(chooseMove(board, 'easy', () => 0)).toMatchObject({ row: 0, col: 0 });
+    expect(chooseMove(board, 'easy', () => 0.25)).toMatchObject({ row: 0, col: 0 });
+    expect(chooseMove(board, 'easy', () => 0.49)).toMatchObject({ row: 0, col: 0 });
+    expect(chooseMove(board, 'easy', () => 0.5)).toMatchObject({ row: 2, col: 0 });
+    expect(chooseMove(board, 'easy', () => 0.99)).toMatchObject({ row: 2, col: 0 });
+  });
+
   it('CA-07 easy: sin jugadas devuelve null y nunca devuelve una jugada ilegal', () => {
     expect(chooseMove(boardFrom(['uuuu']), 'easy', () => 0.5)).toBeNull();
     const random = seeded(7);

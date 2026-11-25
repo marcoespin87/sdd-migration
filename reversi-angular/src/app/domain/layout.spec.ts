@@ -37,6 +37,20 @@ describe('layout', () => {
     });
   });
 
+  it('CA-10 proporciones: el 2 % de la línea y el 7 % del borde por encima de los mínimos (1500x1000, 6x10)', () => {
+    expect(computeLayout(1500, 1000, 6, 10)).toEqual({
+      gridLine: 2,
+      gridStep: 147,
+      innerBorder: 10,
+      symbolSize: 125,
+      leftMargin: 14,
+      topMargin: 58,
+      cornerRadius: 95,
+      tooNarrowColumns: null,
+      tooShortRows: null,
+    });
+  });
+
   it('CA-10 proporciones: aplica los mínimos de línea (1 px), borde interior (2 px) y ficha (10 px)', () => {
     const layout = computeLayout(100, 100, 24, 24);
     expect(layout.gridLine).toBe(1);
@@ -53,6 +67,8 @@ describe('layout', () => {
     expect(hitTest(standard(), 6, 10, 77, 111)).toEqual({ row: 0, col: 0 });
     expect(hitTest(standard(), 6, 10, 48, 82)).toEqual({ row: 0, col: 0 });
     expect(hitTest(standard(), 6, 10, 622, 388)).toEqual({ row: 5, col: 9 });
+    // Esquina inferior derecha de la última ficha (inclusiva): x = 680, y = 446.
+    expect(hitTest(standard(), 6, 10, 680, 446)).toEqual({ row: 5, col: 9 });
   });
 
   it('CA-11 hit-test: el borde interior, las líneas y el exterior no son casilla', () => {
@@ -63,6 +79,11 @@ describe('layout', () => {
     expect(hitTest(standard(), 6, 10, 5, 5)).toBeNull(); // fuera del tablero
     expect(hitTest(standard(), 6, 10, 690, 82)).toBeNull(); // pasada la última columna
     expect(hitTest(standard(), 6, 10, 48, 460)).toBeNull(); // pasada la última fila
+    expect(hitTest(standard(), 6, 10, 48, 112)).toBeNull(); // un píxel por debajo de la ficha (0,0)
+    expect(hitTest(standard(), 6, 10, 681, 446)).toBeNull(); // un píxel a la derecha de la última ficha
+    expect(hitTest(standard(), 6, 10, 680, 447)).toBeNull(); // un píxel por debajo de la última ficha
+    expect(hitTest(standard(), 6, 10, -5, 82)).toBeNull(); // x negativa
+    expect(hitTest(standard(), 6, 10, 48, -5)).toBeNull(); // y negativa
   });
 
   it('CA-12 espacio insuficiente: informa columnas y filas que no caben y calcula igual el mínimo', () => {
@@ -73,6 +94,21 @@ describe('layout', () => {
     expect(computeLayout(120, 1000, 2, 24).tooShortRows).toBeNull();
     expect(computeLayout(1000, 60, 24, 2).tooShortRows).toBe(24);
     expect(computeLayout(1000, 60, 24, 2).tooNarrowColumns).toBeNull();
+  });
+
+  it('CA-12 espacio insuficiente: el indicador aparece exactamente cuando el margen centrado sería negativo', () => {
+    // Margen = trunc((ancho útil - línea - columnas × paso) / 2); es negativo solo si la diferencia es <= -2.
+    let flagged = 0;
+    let unflagged = 0;
+    for (let width = 40; width <= 400; width++) {
+      const layout = computeLayout(width, 2000, 2, 4);
+      const diff = width - 20 - layout.gridLine - 4 * layout.gridStep;
+      expect(layout.tooNarrowColumns !== null).toBe(diff <= -2);
+      if (layout.tooNarrowColumns !== null) flagged++;
+      else unflagged++;
+    }
+    expect(flagged).toBeGreaterThan(0);
+    expect(unflagged).toBeGreaterThan(0);
   });
 
   it('CA-12 espacio insuficiente: con espacio suficiente no informa nada', () => {
