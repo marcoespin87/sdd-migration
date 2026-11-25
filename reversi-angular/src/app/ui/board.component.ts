@@ -71,7 +71,7 @@ function same(a: Position | null, row: number, col: number): boolean {
           [style.top.px]="cell.top"
           [style.width.px]="layout().symbolSize"
           [style.height.px]="layout().symbolSize"
-          [style.border-radius.px]="layout().cornerRadius"
+          [style.border-radius.px]="layout().cornerArc / 2"
           [style.background-color]="cell.color"
         ></div>
       }
