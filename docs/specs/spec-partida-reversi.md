@@ -1,6 +1,6 @@
 # Spec: Partida de Reversi
 
-**Estado:** en desarrollo · **Última revisión:** 2026-11-25
+**Estado:** desplegado · **Última revisión:** 2026-11-25
 
 ## Propósito
 Permitir que una persona juegue una partida de Reversi (Othello) contra la computadora en un tablero rectangular de tamaño configurable, con dos niveles de dificultad, viendo sus jugadas legales y recibiendo mensajes de estado en cada paso. Es un juego de un solo jugador humano, sin cuentas ni persistencia.
@@ -116,7 +116,7 @@ Cambio de idioma: la aplicación siempre abre en inglés y la elección no se re
 
 ## Referencias
 - Historias: ninguna (el código legacy no nació de historias de usuario).
-- Código: `reversi-game-java-main/Reversi2.java` (lógica y tablero en `Reversi2`; lienzo en `Reversi2Board`). Versión Angular: `reversi-angular/` (`src/app/domain`, `src/app/game`, `src/app/ui`).
+- Código: `reversi-game-java-main/Reversi2.java` (lógica y tablero en `Reversi2`; lienzo en `Reversi2Board`). Versión Angular: `reversi-angular/` (`src/app/domain`, `src/app/game`, `src/app/ui`, `src/app/i18n`).
 - Documentación de origen: `reversi-game-java-main/README.md`, comentario de cabecera de `Reversi2.java`, `reversi-game-java-main/revers2a.htm`.
 - Tests: ninguno en el legacy. Versión Angular: `reversi-angular/src/app/**/*.spec.ts` (Vitest).
 - Textos exactos de los mensajes: `Reversi2.java` (constantes `beginMessage` y `skipMessage` y llamadas a `messageText.setText`). Versión Angular: catálogos en `reversi-angular/public/i18n/en.json` y `es.json`.

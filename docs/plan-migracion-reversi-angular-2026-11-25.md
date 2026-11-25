@@ -1,7 +1,7 @@
 # Plan: Migración de Reversi2 a Angular 21
 
 **Fecha:** 2026-11-25
-**Estado:** en desarrollo
+**Estado:** destilado
 **Caso:** 4
 
 ## Contexto
@@ -14,6 +14,8 @@ En la Fase 4 se precisa el comportamiento del selector de idioma (siempre abre e
 
 ## Delta del spec escrito
 `spec-partida-reversi.md`: tres entradas en *Decisiones* (migración a Angular, omisiones del baseline y ajuste de dos textos) y *Referencias* nuevas (código, tests, catálogos i18n y ADR). En *Flujo / Inicio de partida* se agregaron tres ítems que el baseline omitió (mensaje inicial, mensaje de *New Game*, mensaje de nuevo tamaño). En la Fase 3 se reescribió el primer ítem de *Modos de falla* (aviso de ventana) y se agregó una entrada en *Decisiones*. En la Fase 4 se agregó un párrafo de *Contrato* (cambio de idioma) y una entrada en *Decisiones*. El resto de *Comportamiento* e *Invariantes* no se tocó.
+
+**Destilado (2026-11-25).** Al cerrar la Fase 4 el spec describe exactamente lo que corre: la partida completa en Angular, con los tres fixes del legacy verificados (A: CA-16 y CA-29; B: CA-19; C: CA-20), y pasa a `Estado: desplegado`. Quedó en el spec todo el comportamiento observable (Contrato, Flujo, Límites y defaults, Modos de falla, Invariantes) y las decisiones fechadas de la migración. **Quedó afuera**, registrado como seguimiento en el README del port y en el reporte del merge: el retiro del código Java original (`reversi-game-java-main/`), la elección de hosting y despliegue (pide un `/sdd-arquitectura`), un aviso propio si falla la carga del catálogo, `--base-href` en subdirectorios, el `100vh` en móviles, recordar el idioma elegido y las 16 vulnerabilidades moderadas de `npm audit` en herramientas de desarrollo (`@angular/cli`; se resuelven al subir de versión del framework).
 
 ## Decisiones tomadas y enfoque técnico
 - **Estrategia:** el sistema tiene una sola capacidad, así que la migración va **por fases dentro de ella**, de lo más aislado (lógica pura) a lo más expuesto (interfaz). Cada fase es su propio cambio acotado, con su rama, su ciclo y su merge a `develop`. Un solo plan padre.
@@ -112,7 +114,7 @@ Decisiones técnicas de la F4 para aprobar en su gate. Lo observable del idioma 
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
 | F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | mergeada a `develop` |
 | F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | mergeada a `develop` |
-| F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | construida; pendiente de verificación y cierre |
+| F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | verificada; pendiente de merge |
 
 Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualizado con la anterior.
 
@@ -145,7 +147,7 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - [x] Prueba de "no hay texto literal" con el idioma sintético (cubre CA-30).
 - [x] Aviso de atribución en los `.ts`, `.html` y `.css` de `src/` que no lo tienen (cubre CA-33). Comentarios sin comportamiento: sin prueba previa.
 - [x] README del port con ejecución, `--base-href`, catálogo y `100vh`. Documentación: sin prueba previa.
-- [ ] Verificación final y cierre: build y pruebas completas, legacy intacto, `npm audit`, spec a `desplegado` y plan a `destilado` (cubre CA-34, CA-35, CA-36).
+- [x] Verificación final y cierre: build y pruebas completas, legacy intacto, `npm audit`, spec a `desplegado` y plan a `destilado` (cubre CA-34, CA-35, CA-36).
 
 ## Criterios de aceptación
 **F1 — Dominio e IA**
@@ -224,13 +226,13 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 | CA-27 | Modos de falla · espacio insuficiente | `ui/board.component.spec.ts` | ✅ 2026-11-25 |
 | CA-28 | Alcance · Flujo completo | manual: partida completa en el navegador | ✅ 2026-11-25 (manual: lo jugó el usuario) |
 | CA-29 | Flujo · Skip Turn (fix A) | `app.component.spec.ts` | ✅ 2026-11-25 |
-| CA-30 | Contrato · Idioma | `i18n/catalogos.spec.ts` | pendiente |
-| CA-31 | Contrato · Idioma | `app.component.spec.ts` | pendiente |
-| CA-32 | Flujo · mensajes con cantidad | `i18n/catalogos.spec.ts` | pendiente |
-| CA-33 | Referencias · Licencia | medición: grep de atribución | pendiente |
-| CA-34 | Estado del spec | manual: diff del spec | pendiente |
-| CA-35 | Decisiones · migración | `ng build`, `ng test` | pendiente |
-| CA-36 | Alcance de la migración (legacy intacto) | medición: `git diff` vacío | pendiente |
+| CA-30 | Contrato · Idioma | `i18n/catalogos.spec.ts`; `app.component.spec.ts` (sin texto literal); `app.config.spec.ts` (cargador) | ✅ 2026-11-25 |
+| CA-31 | Contrato · Idioma | `app.component.spec.ts`; `ui/controls.component.spec.ts`; `i18n/languages.spec.ts`; `app.config.spec.ts` | ✅ 2026-11-25 |
+| CA-32 | Flujo · mensajes con cantidad | `i18n/catalogos.spec.ts` | ✅ 2026-11-25 |
+| CA-33 | Referencias · Licencia | medición: `grep -rL "Keith Fenske" reversi-angular/src` (0 archivos) y `head -3 reversi-angular/LICENSE` (GPL v3) | ✅ 2026-11-25 |
+| CA-34 | Estado del spec | manual: revisión del diff del spec por el usuario | ✅ 2026-11-25 |
+| CA-35 | Decisiones · migración | `ng build` y `ng test` (14 archivos, 137 pruebas) | ✅ 2026-11-25 |
+| CA-36 | Alcance de la migración (legacy intacto) | medición: `git diff --stat develop...HEAD -- reversi-game-java-main/` vacío | ✅ 2026-11-25 |
 
 ## Pendientes de decisión
 Ninguno.
