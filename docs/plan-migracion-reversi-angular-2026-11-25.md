@@ -19,7 +19,7 @@ NULO sobre lo que el spec promete. El legacy incumple A, B y C; el port los cump
 - **Layout del tablero** (decisión del usuario): una **función pura** en `domain/` calcula paso, márgenes, grosor de línea, borde interior y tamaño de ficha con las proporciones y mínimos del spec (2 %, 7 %, ≥10 px, margen exterior 10 px, radio 65 %); la UI solo pinta esos valores con variables CSS. El hit-test (clic solo dentro de la ficha) es otra función pura.
 - **Estado del spec al cerrar:** la migración cierra los fixes colaterales A, B y C. Al terminar la Fase 4, `spec-partida-reversi.md` pasa de `en desarrollo` a `desplegado`, porque lo que dice ya corre completo. Es la excepción a "la migración no cambia el Estado", y la justifica la regla de la Fase 0 para fixes colaterales.
 - **El legacy no se toca** hasta el cierre. Su retiro (borrar `reversi-game-java-main/`) es un cambio posterior y aparte.
-- **Precondición de entorno para `/sdd-aplicacion` de la Fase 1:** Node.js `^20.19`, `^22.12` o `^24` (Angular 21). El entorno actual tiene Node 23.5.0, no soportado.
+- **Precondición de entorno para `/sdd-aplicacion` de la Fase 1:** Node.js `^20.19`, `^22.12` o `^24` (Angular 21). El entorno tenía Node 23.5.0, no soportado. La Fase 1 se construyó con **Node 26.13.1** (decisión del usuario): está fuera de la tabla oficial de Angular 21 y el CLI lo marca `Unsupported`, pero el proyecto compila y las pruebas pasan (Angular 21.2.26, Vitest 4.1.12). Si aparece un problema atribuible a Node, se pasa a Node 24 LTS.
 - **Licencia:** GPLv3+ (ADR 0001). El port lleva su propio `LICENSE` y conserva el aviso de copyright y la atribución a Keith Fenske.
 
 ### Equivalencias legacy → Angular
@@ -66,7 +66,7 @@ La regla de singular/plural del legacy es: exactamente 1 volteo usa la forma `on
 ## Mapa de ramas
 | Fase | Rama | Depende de | Spec(s) | Estado |
 |---|---|---|---|---|
-| F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | en curso (propuesta) |
+| F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | construida; pendiente de verificación |
 | F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | pendiente |
 | F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | pendiente |
 | F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | pendiente |
@@ -75,11 +75,11 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 
 ## Tareas
 **F1 — Dominio e IA** (rama `migrate/partida-reversi-dominio`)
-- [ ] Crear el proyecto `reversi-angular/` (Angular 21 zoneless, TypeScript estricto, Vitest, `LICENSE` GPLv3 y aviso de atribución). Configuración sin comportamiento: sin prueba previa.
-- [ ] `domain/board`: tablero, posición inicial y tamaños permitidos (cubre CA-01, CA-09).
-- [ ] `domain/rules`: jugadas legales, volteos, aplicar jugada, fin de partida y resultado (cubre CA-02, CA-03, CA-04, CA-05, CA-06).
-- [ ] `domain/ai`: dificultad Easy y Medium con azar inyectable (cubre CA-07, CA-08).
-- [ ] `domain/layout`: cálculo del layout y hit-test (cubre CA-10, CA-11, CA-12).
+- [x] Crear el proyecto `reversi-angular/` (Angular 21 zoneless, TypeScript estricto, Vitest, `LICENSE` GPLv3 y aviso de atribución). Configuración sin comportamiento: sin prueba previa.
+- [x] `domain/board`: tablero, posición inicial y tamaños permitidos (cubre CA-01, CA-09).
+- [x] `domain/rules`: jugadas legales, volteos, aplicar jugada, fin de partida y resultado (cubre CA-02, CA-03, CA-04, CA-05, CA-06).
+- [x] `domain/ai`: dificultad Easy y Medium con azar inyectable (cubre CA-07, CA-08).
+- [x] `domain/layout`: cálculo del layout y hit-test (cubre CA-10, CA-11, CA-12).
 
 **F2 — Servicio de partida** (rama `migrate/partida-reversi-juego`)
 - [ ] `game/GameService`: turnos, clic del usuario en sus 7 casos, *Skip Turn*, reinicios y mensajes por clave (cubre CA-13, CA-14, CA-17, CA-18, CA-21, CA-22).
