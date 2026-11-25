@@ -164,7 +164,9 @@ commit)
         exigir_aprobacion
       fi ;;
     verificacion)
-      if [ "$caso" != "hotfix" ]; then tiene_fase "$ACTUAL" aplicacion || die "no hay commits de aplicación en '$ACTUAL': nada que verificar"; fi
+      # Un baseline del Caso 5 (rama baseline/, solo docs/) no tiene aplicación: no hay código que verificar
+      case "$ACTUAL" in baseline/*) [ "$caso" = "5" ] && BASELINE_VERIF=1 ;; esac
+      if [ "$caso" != "hotfix" ] && [ "${BASELINE_VERIF:-0}" -ne 1 ]; then tiene_fase "$ACTUAL" aplicacion || die "no hay commits de aplicación en '$ACTUAL': nada que verificar"; fi
       for f in "${ARCHIVOS[@]}"; do case "$f" in docs/*) ;; *) die "un commit de verificación solo toca docs/ (recorte de spec, estado, plan); '$f' no" ;; esac; done ;;
     entrega) [ "$tipo" = "chore" ] || die "la fase entrega solo admite commits chore(release)" ;;
   esac
@@ -268,6 +270,10 @@ merge)
       lin=$(git diff --numstat "$tronco...$rama" | awk '{s+=$1+$2} END {print s+0}')
       arch=$(git diff --numstat "$tronco...$rama" | wc -l | tr -d ' ')
       { [ "$lin" -le 80 ] && [ "$arch" -le 8 ]; } || die "la rama de vía rápida acumula $lin líneas en $arch archivos (máx. 80 y 8): usar el ciclo completo"
+    elif case "$rama" in baseline/*) true ;; *) false ;; esac \
+        && [ "$casos_rama" = "5 " ] \
+        && [ -z "$(git diff --name-only "$tronco...$rama" | grep -v '^docs/' )" ]; then
+      :  # baseline del Caso 5: rama baseline/, todos sus commits SDD-Caso: 5 y solo docs/ -> sin commit de verificación
     else
       tiene_fase "$rama" verificacion || die "'$rama' no tiene commit de verificación (SDD-Fase: verificacion): primero la verificación y el gate humano"
     fi
