@@ -96,7 +96,7 @@ Decisiones técnicas de la F3 para aprobar en su gate. Lo que cambia respecto de
 |---|---|---|---|---|
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
 | F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | mergeada a `develop` |
-| F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | construida; pendiente de verificación |
+| F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | verificada; pendiente de merge |
 | F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | pendiente |
 
 Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualizado con la anterior.
@@ -200,12 +200,12 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 | CA-21 | Contrato · Selector de dificultad | `game/game.service.spec.ts` | ✅ 2026-11-25 |
 | CA-22 | Flujo · Inicio de partida; Contrato · New Game y selectores | `game/game.service.spec.ts` | ✅ 2026-11-25 |
 | CA-23 | Invariantes · usuario mueve primero; computadora siempre legal | `game/game.service.spec.ts` | ✅ 2026-11-25 |
-| CA-24 | Contrato · tabla de controles | `ui/controls.component.spec.ts` | pendiente |
-| CA-25 | Límites y defaults · Colores y Dibujo | `ui/board.component.spec.ts` | pendiente |
-| CA-26 | Contrato · Tablero; Límites · clic dentro de la ficha | `ui/board.component.spec.ts` | pendiente |
-| CA-27 | Modos de falla · espacio insuficiente | `ui/board.component.spec.ts` | pendiente |
-| CA-28 | Alcance · Flujo completo | manual: partida completa en el navegador | pendiente |
-| CA-29 | Flujo · Skip Turn (fix A) | `app.component.spec.ts` | pendiente |
+| CA-24 | Contrato · tabla de controles | `ui/controls.component.spec.ts` | ✅ 2026-11-25 |
+| CA-25 | Límites y defaults · Colores y Dibujo | `ui/board.component.spec.ts` | ✅ 2026-11-25 |
+| CA-26 | Contrato · Tablero; Límites · clic dentro de la ficha | `ui/board.component.spec.ts` | ✅ 2026-11-25 |
+| CA-27 | Modos de falla · espacio insuficiente | `ui/board.component.spec.ts` | ✅ 2026-11-25 |
+| CA-28 | Alcance · Flujo completo | manual: partida completa en el navegador | ✅ 2026-11-25 (manual: lo jugó el usuario) |
+| CA-29 | Flujo · Skip Turn (fix A) | `app.component.spec.ts` | ✅ 2026-11-25 |
 | CA-30 | Contrato · Idioma | `i18n/catalogos.spec.ts` | pendiente |
 | CA-31 | Contrato · Idioma | `app.component.spec.ts` | pendiente |
 | CA-32 | Flujo · mensajes con cantidad | `i18n/catalogos.spec.ts` | pendiente |
@@ -235,6 +235,7 @@ Detalles de implementación de la Fase 2 respecto al diseño aprobado (no cambia
 Seguimientos que dejó la verificación de la Fase 1 (no son ajustes del spec):
 - **F3:** si faltan columnas y filas a la vez, el legacy muestra solo el mensaje de filas ("too short"); `computeLayout` informa ambos indicadores, y la interfaz decide la precedencia para igualar al legacy.
 - **F3:** `hitTest` devuelve `NaN` si recibe coordenadas `NaN`; los eventos reales del mouse siempre dan números.
+- **CA-28 (manual) ejecutado por el usuario el 2026-11-25:** partidas completas en 6×10 y en 8×8 en el navegador, con resultado correcto (resaltado, jugada, parpadeo de la computadora, mensaje final y *New Game*).
 - **Pendiente de verificación global:** `npm audit` y licencias de dependencias transitivas (requieren red). Las 16 de la cadena de Transloco son MIT, salvo `argparse` (Python-2.0, permisiva y compatible con GPLv3+); la cadena de `cosmiconfig` no entra al bundle.
 
 Seguimientos que dejó la verificación de la Fase 3 (no son ajustes del spec):
