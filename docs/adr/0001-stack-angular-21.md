@@ -1,6 +1,6 @@
 # ADR 0001: Stack Angular 21 para migrar Reversi2
 
-**Estado:** propuesto · **Fecha:** 2026-11-25
+**Estado:** aceptado · **Fecha:** 2026-11-25
 
 ## Contexto
 El juego existe como un único archivo Java AWT (`Reversi2.java`, applet de Java 1.1) que ya no corre en navegadores y mezcla estado, reglas, IA y vista en una sola clase, con un hilo auxiliar sin sincronización. Se quiere migrarlo a **Angular 21** conservando su comportamiento (`docs/specs/spec-partida-reversi.md`). Antes de la migración (Caso 4) hay que fijar el stack y las convenciones que la condicionan: estructura del proyecto, pruebas, internacionalización, render del tablero y licencia.
