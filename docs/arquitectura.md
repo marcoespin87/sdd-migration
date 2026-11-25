@@ -38,7 +38,7 @@ Detalle y alternativas en `docs/adr/0001-stack-angular-21.md`.
 - Angular 21: se fijan al crear el proyecto (`ng serve`, `ng build`, `ng test`).
 
 ## Flujo de trabajo
-- **Tronco de integración:** `develop` (nace de `master`; `master` queda como rama estable y no recibe cambios directos)
+- **Tronco de integración:** `main` (antes `develop`, renombrada al terminar la migración; ver ADR 0002). `master` conserva solo el commit de importación y no recibe cambios
 - **Ramas:** `<tipo>/<capacidad>-<slug>` (tipos: `init`, `feat`, `change`, `refactor`, `fix`, `migrate`, `baseline`, `arq`, `spec`, `hotfix`).
 - **Commits:** Conventional Commits con trailers `SDD-*`, hechos con `sdd-git.sh`.
 - **Merge:** local, con OK explícito tras `/sdd-verificacion`. Sin push, pull ni PR desde las skills.
@@ -48,3 +48,4 @@ Compilación estática del proyecto Angular. El hosting y la reversión se decid
 
 ## ADRs
 - `docs/adr/0001-stack-angular-21.md` — stack Angular 21, estructura, pruebas, i18n, tablero y licencia.
+- `docs/adr/0002-tronco-main.md` — el tronco de integración se llama `main` (antes `develop`).

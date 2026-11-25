@@ -15,6 +15,8 @@ En la Fase 4 se precisa el comportamiento del selector de idioma (siempre abre e
 ## Delta del spec escrito
 `spec-partida-reversi.md`: tres entradas en *Decisiones* (migración a Angular, omisiones del baseline y ajuste de dos textos) y *Referencias* nuevas (código, tests, catálogos i18n y ADR). En *Flujo / Inicio de partida* se agregaron tres ítems que el baseline omitió (mensaje inicial, mensaje de *New Game*, mensaje de nuevo tamaño). En la Fase 3 se reescribió el primer ítem de *Modos de falla* (aviso de ventana) y se agregó una entrada en *Decisiones*. En la Fase 4 se agregó un párrafo de *Contrato* (cambio de idioma) y una entrada en *Decisiones*. El resto de *Comportamiento* e *Invariantes* no se tocó.
 
+**Nota sobre el tronco.** Durante la migración el tronco de integración se llamó `develop`; al terminar se renombró a `main` (ADR 0002). Los nombres `develop` de este plan, incluidos los comandos de los criterios, son históricos y se leen como `main`.
+
 **Destilado (2026-11-25).** Al cerrar la Fase 4 el spec describe exactamente lo que corre: la partida completa en Angular, con los tres fixes del legacy verificados (A: CA-16 y CA-29; B: CA-19; C: CA-20), y pasa a `Estado: desplegado`. Quedó en el spec todo el comportamiento observable (Contrato, Flujo, Límites y defaults, Modos de falla, Invariantes) y las decisiones fechadas de la migración. **Quedó afuera**, registrado como seguimiento en el README del port y en el reporte del merge: el retiro del código Java original (`reversi-game-java-main/`), la elección de hosting y despliegue (pide un `/sdd-arquitectura`), un aviso propio si falla la carga del catálogo, `--base-href` en subdirectorios, el `100vh` en móviles, recordar el idioma elegido y las 16 vulnerabilidades moderadas de `npm audit` en herramientas de desarrollo (`@angular/cli`; se resuelven al subir de versión del framework).
 
 ## Decisiones tomadas y enfoque técnico
@@ -114,7 +116,7 @@ Decisiones técnicas de la F4 para aprobar en su gate. Lo observable del idioma 
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
 | F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | mergeada a `develop` |
 | F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | mergeada a `develop` |
-| F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | verificada; pendiente de merge |
+| F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | mergeada a `develop` |
 
 Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualizado con la anterior.
 
