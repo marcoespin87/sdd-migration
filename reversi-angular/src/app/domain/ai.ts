@@ -18,6 +18,5 @@ export function chooseMove(board: Board, level: Level, random: Random): Move | n
   }
   const best = level === 'medium' ? Math.max(...moves.map((m) => m.flips)) : 1;
   const candidates = moves.filter((m) => m.flips >= best);
-  const index = Math.min(Math.floor(random() * candidates.length), candidates.length - 1);
-  return candidates[index];
+  return candidates[Math.floor(random() * candidates.length)];
 }
