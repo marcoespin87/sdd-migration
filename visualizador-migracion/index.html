@@ -1,0 +1,1226 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migración Reversi · Visualizador SDD</title>
+<style>
+/* Paleta TCS (igual que presentacion-3slides): negro/blanco base, azul y amarillo secundarios */
+:root{
+  --bg:#F6F7F9; --card:#fff; --ink:#111; --mut:#595959; --mut2:#7F7F7F; --line:#D9D9D9;
+  --blue:#4E84C4; --blue-d:#3E6A9D; --blue-l:#DCE6F3;
+  --yellow:#FBB034; --yellow-l:#FFF0D2;
+  --green:#2E8B57; --green-l:#DDF1E6; --red:#E41165; --purple:#7030A0;
+  --font:Calibri,Carlito,'Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E0F12; --card:#17191E; --ink:#F2F2F2; --mut:#B5B9C0; --mut2:#8A8F98; --line:#2C3038;
+    --blue:#6B9FD8; --blue-d:#8DB5E6; --blue-l:#1C2A3C; --yellow-l:#33290F; --green-l:#14291F;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E0F12; --card:#17191E; --ink:#F2F2F2; --mut:#B5B9C0; --mut2:#8A8F98; --line:#2C3038;
+  --blue:#6B9FD8; --blue-d:#8DB5E6; --blue-l:#1C2A3C; --yellow-l:#33290F; --green-l:#14291F;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.45;font-size:16px}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+code,.mono{font-family:ui-monospace,Consolas,monospace;font-size:.88em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+
+/* ---------- cabecera ---------- */
+header.top{background:#000;color:#fff;padding:28px 0 24px;position:relative;overflow:hidden}
+header.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,var(--blue),var(--yellow))}
+.top h1{font-weight:300;font-size:clamp(28px,5vw,46px);line-height:1.08}
+.top p{color:#d8d8d8;max-width:760px;margin-top:8px;font-size:clamp(15px,2.2vw,19px)}
+.top b{color:var(--yellow)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:20px}
+.kpi{border:2px solid #333;border-radius:14px;padding:10px 14px;background:rgba(255,255,255,.04)}
+.kpi b{display:block;font-size:28px;line-height:1.1;color:#fff}
+.kpi span{font-size:13px;color:#bbb}
+.themebtn{position:absolute;right:16px;top:16px;border:1px solid #555;border-radius:999px;padding:4px 12px;font-size:13px;color:#ddd}
+
+/* ---------- navegación ---------- */
+nav.tabs{position:sticky;top:0;z-index:30;background:var(--card);border-bottom:1px solid var(--line)}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:6px}
+nav.tabs a{padding:10px 14px;font-weight:700;font-size:15px;color:var(--mut);text-decoration:none;border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs a:hover,nav.tabs a.on{color:var(--ink);border-color:var(--blue)}
+
+section{padding:34px 0 8px}
+h2{font-weight:300;font-size:clamp(24px,3.5vw,34px);margin-bottom:4px}
+.lead{color:var(--mut);margin-bottom:18px;max-width:820px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;border:2px solid var(--blue);color:var(--blue-d);background:var(--blue-l);white-space:nowrap}
+.pill.g{border-color:var(--green);color:var(--green);background:var(--green-l)}
+.pill.y{border-color:var(--yellow);color:#8a5a00;background:var(--yellow-l)}
+.pill.k{border-color:var(--ink);color:var(--ink);background:transparent}
+.pill.p{border-color:var(--purple);color:var(--purple);background:transparent}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.y{color:var(--yellow)}}
+:root[data-theme="dark"] .pill.y{color:var(--yellow)}
+
+/* ---------- 1. ciclo SDD ---------- */
+.cycle{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.cstep{position:relative;text-align:left;border:3px solid var(--line);border-radius:16px;padding:12px 14px;background:var(--card);transition:.2s}
+.cstep:hover{border-color:var(--blue)}
+.cstep.on{border-color:var(--blue);background:var(--blue);color:#fff}
+.cstep .n{font-size:12px;font-weight:700;opacity:.75}
+.cstep b{display:block;font-size:17px;line-height:1.15}
+.cstep small{display:block;font-size:12.5px;opacity:.8;margin-top:2px}
+.cstep .gate{position:absolute;right:8px;top:8px;background:var(--yellow);color:#000;border-radius:999px;font-size:11px;font-weight:700;padding:1px 8px}
+.cdetail{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.cdetail h4{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin-bottom:6px}
+.cdetail ul{list-style:none;display:grid;gap:5px}
+.cdetail li{padding-left:16px;position:relative;font-size:15px}
+.cdetail li::before{content:"";position:absolute;left:0;top:8px;width:7px;height:7px;border-radius:50%;background:var(--blue)}
+.cdetail .appr{background:var(--yellow-l);border:2px solid var(--yellow);border-radius:12px;padding:10px 14px}
+.cdetail .appr li::before{background:var(--yellow)}
+
+/* ---------- 2. línea de tiempo ---------- */
+.player{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.btn{border:2px solid var(--ink);border-radius:999px;padding:6px 16px;font-weight:700;font-size:14px;background:var(--card)}
+.btn:hover{background:var(--ink);color:var(--card)}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn:disabled{opacity:.35;pointer-events:none}
+.progress{flex:1;min-width:160px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--yellow));width:0;transition:width .4s}
+.stepcount{font-size:14px;color:var(--mut);font-variant-numeric:tabular-nums;min-width:90px;text-align:right}
+
+.tl{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.tl{grid-template-columns:1fr}}
+.rail{position:relative;display:grid;gap:8px;padding-left:22px}
+.rail::before{content:"";position:absolute;left:8px;top:10px;bottom:10px;width:4px;border-radius:2px;background:var(--line)}
+.ev{position:relative;text-align:left;border:2px solid var(--line);border-radius:14px;padding:9px 12px;background:var(--card);transition:.15s;width:100%}
+.ev::before{content:"";position:absolute;left:-21px;top:16px;width:14px;height:14px;border-radius:50%;background:var(--card);border:3px solid var(--mut2)}
+.ev.done::before{background:var(--green);border-color:var(--green)}
+.ev:hover{border-color:var(--blue)}
+.ev.on{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-l)}
+.ev.on::before{border-color:var(--blue);background:var(--blue)}
+.ev .t{font-size:12px;color:var(--mut);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ev b{display:block;font-size:15.5px;line-height:1.2;margin-top:2px}
+.ev.sub{margin-left:14px;width:calc(100% - 14px)}
+
+.detail h3{font-weight:700;font-size:22px;line-height:1.15}
+.detail .meta{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+.detail p.sum{color:var(--mut);margin-bottom:12px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+.box{border-radius:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--line)}
+.box h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin-bottom:6px}
+.box ul{list-style:none;display:grid;gap:5px}
+.box li{font-size:14.5px;padding-left:14px;position:relative}
+.box li::before{content:"";position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--mut2)}
+.box.ap{background:var(--yellow-l);border-color:var(--yellow)}
+.box.ap li::before{background:var(--yellow)}
+.box.ok{background:var(--green-l);border-color:var(--green)}
+.box.ok li::before{background:var(--green)}
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:6px 0}
+.flow .s{border:2px solid var(--line);border-radius:12px;padding:6px 12px;font-size:13.5px;background:var(--card);margin:3px 0}
+.flow .s b{display:block;font-size:14px}
+.flow .s.gate{border-color:var(--yellow);background:var(--yellow-l)}
+.flow .s.done{border-color:var(--green)}
+.flow .a{align-self:center;padding:0 6px;color:var(--mut2)}
+.cachips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chip{font-size:12px;font-weight:700;border:1.5px solid var(--green);color:var(--green);border-radius:6px;padding:0 6px;background:var(--green-l)}
+.quote{border-left:4px solid var(--yellow);padding:4px 12px;color:var(--mut);font-size:14.5px;margin-top:6px;font-style:italic}
+
+/* ---------- 3. aprobadores ---------- */
+.gates{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.gcard{border:2px solid var(--yellow);background:var(--yellow-l);border-radius:16px;padding:14px 16px}
+.gcard .gn{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#000;color:#fff;font-weight:700;margin-right:8px}
+.gcard h3{font-size:18px;display:flex;align-items:center;margin-bottom:6px}
+.gcard dl{display:grid;gap:6px;font-size:14.5px}
+.gcard dt{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.gcard dd{margin:0}
+.actors{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:14px}
+.actor h3{font-size:17px;margin-bottom:4px}
+.actor p{font-size:14.5px;color:var(--mut)}
+.note{margin-top:14px;border:2px dashed var(--line);border-radius:14px;padding:10px 16px;color:var(--mut);font-size:14.5px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);background:var(--bg);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ---------- 4. trazabilidad ---------- */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.filters button{border:2px solid var(--line);border-radius:999px;padding:3px 14px;font-weight:700;font-size:13.5px;background:var(--card)}
+.filters button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:0 6px;border:1.5px solid var(--mut2);color:var(--mut)}
+.tag.fix{border-color:var(--red);color:var(--red)}
+.tag.man{border-color:var(--purple);color:var(--purple)}
+.tag.med{border-color:var(--blue);color:var(--blue-d)}
+
+/* ---------- 5. legacy -> angular ---------- */
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.fix h3{font-size:17px;margin-bottom:2px}
+.fix .ref{font-size:12.5px;color:var(--mut)}
+.fix p{font-size:14.5px;margin-top:6px}
+.layers{display:grid;gap:6px;margin-top:8px}
+.layer{border:2px solid var(--blue);border-radius:12px;padding:8px 12px;font-size:14px}
+.layer b{margin-right:6px}
+.layer.d{border-color:var(--green)}.layer.g2{border-color:var(--yellow)}
+.layerarrow{text-align:center;color:var(--mut2);font-size:13px;line-height:1}
+
+/* ---------- 0. en vivo ---------- */
+.live-setup{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:860px){.live-setup{grid-template-columns:1fr}}
+label.f{display:block;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:0 0 4px;font-weight:700}
+input[type=text],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:8px 12px}
+textarea{resize:vertical;min-height:84px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.banner{border:2px solid var(--red);border-radius:14px;padding:12px 16px;margin-bottom:14px;background:var(--card)}
+.banner code{background:var(--bg);padding:2px 6px;border-radius:6px}
+.live-steps{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.lstep{border:2px solid var(--line);border-radius:999px;padding:4px 14px;font-weight:700;font-size:14px;background:var(--card);color:var(--mut)}
+.lstep.done{border-color:var(--green);color:var(--green);background:var(--green-l)}
+.lstep.on{border-color:var(--blue);background:var(--blue);color:#fff;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 5px var(--blue-l)}}
+.statusbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--mut2);display:inline-block}
+.dot.running{background:var(--blue);animation:pulse 1.2s infinite}.dot.waiting-gate{background:var(--yellow)}.dot.done{background:var(--green)}.dot.error{background:var(--red)}.dot.waiting-input{background:var(--yellow)}
+.gatepanel{border:3px solid var(--yellow);background:var(--yellow-l);border-radius:16px;padding:14px 18px;margin:14px 0}
+.gatepanel h3{font-size:19px}
+.livegrid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:980px){.livegrid{grid-template-columns:1fr}}
+.feed{max-height:640px;overflow:auto;display:grid;gap:8px;padding-right:4px}
+.fe{border-radius:12px;padding:8px 12px;font-size:14.5px;border:1px solid var(--line);background:var(--bg)}
+.fe.text{background:var(--card);border-left:4px solid var(--blue);white-space:pre-wrap;word-break:break-word}
+.fe.note{border-style:dashed;color:var(--mut)}
+.fe.tool{font-size:13.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.fe.skill{border-color:var(--blue);background:var(--blue-l)}
+.fe.appr{border-color:var(--yellow);background:var(--yellow-l)}
+.fe.err{border-color:var(--red)}
+.fe .tn{font-weight:700;color:var(--blue-d)}
+.fe .ts{font-size:11.5px;color:var(--mut2);margin-left:auto}
+.fe:not(.tool) .ts{display:block;text-align:right;margin-top:3px}
+.fe details{width:100%}.fe summary{cursor:pointer;color:var(--mut);font-size:12.5px}
+.fe pre{white-space:pre-wrap;word-break:break-word;font-size:12.5px;margin-top:4px;max-height:220px;overflow:auto;font-family:ui-monospace,Consolas,monospace}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:4px 0 8px}.bar i{display:block;height:100%;background:var(--green)}
+.cm{border-bottom:1px solid var(--line);padding:6px 0;font-size:13.5px}
+.cm:last-child{border:0}.cm .h{font-family:ui-monospace,Consolas,monospace;color:var(--mut)}
+.cm .tr{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.empty{color:var(--mut);font-size:14px;padding:10px 0}
+/* ---------- en vivo: guía y decisión ---------- */
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.hw{border:2px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--card);display:grid;gap:3px;font-size:14px;color:var(--mut)}
+.hw b{color:var(--ink);font-size:16px}
+.hw .who{justify-self:start;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 10px;background:var(--blue-l);color:var(--blue-d)}
+.hw.you{border-color:var(--yellow)}.hw.you .who{background:var(--yellow);color:#000}
+.hw.gate{background:var(--yellow-l)}
+.gloss{margin:0 0 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:8px 14px}
+.gloss summary{cursor:pointer;font-weight:700;font-size:14.5px}
+.gloss dl{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;margin-top:8px;font-size:14px}
+.gloss dt{font-weight:700}.gloss dd{margin:0;color:var(--mut)}
+@media (max-width:640px){.gloss dl{grid-template-columns:1fr}}
+.stephd{font-size:17px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.stephd .num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#000;color:#fff;font-size:15px}
+.guide{margin-top:12px;border-radius:14px;padding:12px 18px;font-size:16px;border:2px solid var(--blue);background:var(--blue-l);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.guide b{font-size:17px}
+.guide.turn{border-color:var(--yellow);background:var(--yellow-l);animation:pulse 1.6s infinite}
+.guide.ok{border-color:var(--green);background:var(--green-l)}
+.guide.bad{border-color:var(--red)}
+.nowline{font-size:14.5px;color:var(--mut);margin:-4px 0 12px}
+.coltitle{font-size:16px;margin-bottom:8px}.coltitle small{font-weight:400;color:var(--mut);font-size:13px}
+.decision{border:2px solid var(--line);border-radius:16px;padding:14px 16px;background:var(--card)}
+.decision.turn{border:3px solid var(--yellow);background:var(--yellow-l)}
+.decision.ok{border-color:var(--green);background:var(--green-l)}
+.decision.bad{border-color:var(--red)}
+.decision.work{border-color:var(--blue);background:var(--blue-l)}
+.decision h3{font-size:19px;line-height:1.2;margin-bottom:4px}
+.decision p{font-size:14.5px;margin:4px 0}
+.decision ol{margin:6px 0 8px 20px;font-size:14.5px;color:var(--mut)}
+.acts{display:grid;gap:8px;margin-top:10px}
+.act{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;text-align:left;border:2px solid var(--ink);border-radius:12px;padding:8px 12px;background:var(--card)}
+.act:hover{background:var(--bg)}
+.act b{font-size:15.5px}.act small{grid-column:2;color:var(--mut);font-size:12.8px;line-height:1.25}
+.act .ic{grid-row:1/3;font-size:20px}
+.act.go{border-color:var(--green);background:var(--green-l)}
+.act.chg{border-color:var(--blue)}.act.rej{border-color:var(--red)}
+.fe.ask{border-left-width:8px;border-color:var(--yellow);box-shadow:0 0 0 3px var(--yellow-l)}
+.fe.tool .errout{color:var(--red)}
+.files{display:grid;gap:6px}
+.fl{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--card);font-size:13.5px}
+.fl .p{font-family:ui-monospace,Consolas,monospace;word-break:break-all}
+.fl small{display:block;color:var(--mut);font-family:var(--font)}
+.fl .btn{padding:2px 12px;font-size:13px;white-space:nowrap}
+.difflog{white-space:pre-wrap;word-break:break-word;font-size:12.5px;max-height:420px;overflow:auto;font-family:ui-monospace,Consolas,monospace;background:var(--bg);border-radius:10px;padding:10px}
+.difflog .a{color:var(--green)}.difflog .d{color:var(--red)}.difflog .h{color:var(--blue-d)}
+
+.provs{display:grid;gap:10px}
+.prov{border:2px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--bg);transition:.15s}
+.prov.active{border-color:var(--blue);background:var(--card);box-shadow:0 0 0 3px var(--blue-l)}
+.provhead{display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;font-size:16px}
+.provhead input{width:18px;height:18px;accent-color:var(--blue)}
+.activetag{display:none;margin-left:auto;font-size:11px;font-weight:700;border-radius:999px;padding:1px 10px;background:var(--blue);color:#fff}
+.prov.active .activetag{display:inline-block}
+footer{padding:30px 0 40px;color:var(--mut);font-size:13.5px}
+.sr{position:absolute;left:-9999px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <button class="themebtn" id="themebtn" aria-label="Cambiar entre tema claro y oscuro">Tema</button>
+  <div class="wrap">
+    <h1>Migración de Reversi: Java AWT → Angular 21</h1>
+    <p>Paso a paso de cómo se hizo la migración con el método <b>SDD</b> (specs primero): fases, ramas, <b>aprobaciones humanas (gates)</b>, criterios de aceptación y resultados. Los datos salen del plan, el spec y el historial de git del repositorio.</p>
+    <div class="kpis">
+      <div class="kpi"><b>4</b><span>fases de migración</span></div>
+      <div class="kpi"><b>36</b><span>criterios CA-01…CA-36</span></div>
+      <div class="kpi"><b>137</b><span>pruebas Vitest en verde</span></div>
+      <div class="kpi"><b>3</b><span>defectos del legacy corregidos (A, B, C)</span></div>
+      <div class="kpi"><b>0</b><span>cambios en el código Java original</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Secciones">
+  <div class="wrap">
+    <a href="#vivo" class="on">▶ Migrar mi repo</a>
+    <a href="#ciclo">Guía: el ciclo</a>
+    <a href="#migracion">Ejemplo: Reversi paso a paso</a>
+    <a href="#aprobadores">Quién aprueba qué</a>
+    <a href="#trazabilidad">Ejemplo: criterios</a>
+    <a href="#legacy">Ejemplo: Java → Angular</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ====================== 0. EN VIVO ====================== -->
+<section id="vivo">
+  <h2>Migrar mi repositorio</h2>
+  <p class="lead">Aquí corres una migración de verdad. La IA hace el trabajo pesado, pero <b>tú decides en cada punto importante</b>: la IA se detiene, te muestra lo que propone y no avanza hasta que tú apruebes, pidas cambios o rechaces.</p>
+
+  <div class="how" aria-label="Cómo funciona">
+    <div class="hw you"><span class="who">TÚ</span><b>1 · Preparas</b><span>Eliges el repo a migrar y escribes qué quieres lograr.</span></div>
+    <div class="hw ai"><span class="who">IA</span><b>2 · Explora y propone</b><span>Lee el código, decide qué tipo de cambio es y escribe el <i>spec</i> (qué debe hacer el sistema) y los <i>criterios</i> para comprobarlo.</span></div>
+    <div class="hw you gate"><span class="who">TÚ 🚦</span><b>3 · Apruebas (gate)</b><span>La IA se detiene. Lees su propuesta y eliges: <b>aprobar</b>, <b>pedir cambios</b>, <b>rechazar</b> o <b>editar los archivos tú mismo</b>.</span></div>
+    <div class="hw ai"><span class="who">IA</span><b>4 · Construye y verifica</b><span>Escribe pruebas, programa, comprueba y deja todo en commits locales. Vuelve a detenerse para tu cierre final.</span></div>
+  </div>
+  <p class="empty" style="margin:8px 0 14px">Las dos primeras etapas de la IA y tu aprobación se repiten por cada fase de la migración. Cualquier cambio que pidas o edites se refleja en el spec, los criterios y el plan, porque la IA los actualiza antes de volver a preguntarte.</p>
+
+  <details class="gloss">
+    <summary>¿Qué significan estas palabras? (spec, gate, caso, criterio…)</summary>
+    <dl>
+      <dt>Spec</dt><dd>Documento que describe, en lenguaje claro, lo que el sistema debe hacer. Se escribe <b>antes</b> del código y es la referencia de todo.</dd>
+      <dt>Gate</dt><dd>Un punto de control donde la IA se detiene y una persona decide. Nada avanza sin tu respuesta.</dd>
+      <dt>Caso</dt><dd>El tipo de cambio: 1 sistema desde cero · 2 funcionalidad nueva · 3 modificar algo existente · <b>4 migración de lenguaje</b> · 5 documentar código que no tiene spec.</dd>
+      <dt>Delta</dt><dd>Lo que cambia en el spec. En una migración debe ser <b>nulo</b>: el programa nuevo hace lo mismo que el viejo.</dd>
+      <dt>Criterio CA-NN</dt><dd>Una condición numerada que debe cumplirse, con la forma de comprobarla (prueba automática, prueba manual o medición).</dd>
+      <dt>Fase / rama</dt><dd>La migración se divide en fases pequeñas. Cada una vive en su propia rama de git y se une al tronco (main) solo cuando tú la apruebas.</dd>
+      <dt>ADR</dt><dd>Registro de una decisión de arquitectura (por ejemplo, "usaremos Angular 21").</dd>
+    </dl>
+  </details>
+
+  <div class="banner" id="stale" hidden style="border-color:var(--yellow);background:var(--yellow-l)">
+    <b>⚠ El servidor que tienes corriendo es una versión anterior a esta página.</b>
+    Recargar el navegador no actualiza el servidor. <b>Cierra la ventana negra del servidor</b> (o pulsa Ctrl+C en ella) y vuelve a abrir
+    <code>iniciar.cmd</code>; luego recarga la página con Ctrl+F5.
+  </div>
+
+  <div class="banner" id="offline" hidden>
+    <b>El servidor local no está activo.</b> Esta parte necesita el orquestador. En una terminal ejecuta
+    <code>node visualizador-migracion/server.js</code> y abre <code>http://127.0.0.1:4173</code>
+    (o haz doble clic en <code>iniciar.cmd</code>). Las demás secciones funcionan sin servidor.
+  </div>
+
+  <div class="card" id="setup">
+    <div class="live-setup">
+      <div>
+        <h3 class="stephd"><span class="num">1</span> ¿Qué repositorio quieres migrar?</h3>
+        <div class="filters" role="radiogroup" aria-label="Origen del repositorio" style="margin-bottom:8px">
+          <button type="button" class="on" id="tabCopy" role="radio" aria-checked="true">Crear copia desde un origen</button>
+          <button type="button" id="tabExisting" role="radio" aria-checked="false">Usar un repo existente</button>
+        </div>
+
+        <div id="paneCopy">
+          <label class="f" for="srcPath">Origen: carpeta local o URL git</label>
+          <div class="row" style="margin-top:0"><input type="text" id="srcPath" style="flex:1;min-width:0" placeholder="C:\codigo\legacy   ó   https://github.com/org/repo.git" autocomplete="off" spellcheck="false"><button class="btn" data-browse="srcPath" type="button">Examinar…</button></div>
+          <label class="f" for="dstParent" style="margin-top:8px">Guardar la copia en (carpeta destino)</label>
+          <div class="row" style="margin-top:0"><input type="text" id="dstParent" style="flex:1;min-width:0" placeholder="C:\Users\tu-usuario\Migraciones" autocomplete="off" spellcheck="false"><button class="btn" data-browse="dstParent" type="button">Examinar…</button></div>
+          <label class="f" for="dstName" style="margin-top:8px">Nombre de la carpeta del proyecto migrado</label>
+          <input type="text" id="dstName" placeholder="mi-proyecto-migrado" autocomplete="off" spellcheck="false">
+          <p class="empty" style="margin-top:6px">Se trabaja sobre una <b>copia</b>: el origen no se toca y la copia no queda enlazada a él (sin remoto).</p>
+          <div class="row"><button class="btn pri" id="btnPrepare" type="button">Preparar copia y conectar</button></div>
+        </div>
+
+        <div id="paneExisting" hidden>
+          <label class="f" for="repoPath">Ruta del repositorio existente (se trabaja directamente sobre él)</label>
+          <div class="row" style="margin-top:0"><input type="text" id="repoPath" style="flex:1;min-width:0" placeholder="C:\ruta\a\mi-proyecto" autocomplete="off" spellcheck="false"><button class="btn" data-browse="repoPath" type="button">Examinar…</button></div>
+          <div class="row"><button class="btn pri" id="btnRepo" type="button">Conectar repo</button></div>
+        </div>
+
+        <div class="row"><button class="btn" id="btnSkills" hidden type="button">Copiar las skills SDD al repo</button></div>
+        <p class="empty" id="repoInfo">Sin repositorio conectado.</p>
+      </div>
+
+      <div>
+        <h3 class="stephd"><span class="num">2</span> ¿Con qué IA? <small style="font-weight:400;color:var(--mut);font-size:13px">configura una o las dos y marca la activa</small></h3>
+        <div class="provs" role="radiogroup" aria-label="Proveedor de IA activo">
+          <div class="prov" id="provClaude">
+            <label class="provhead"><input type="radio" name="prov" value="claude"><b>Claude Code</b><span class="pill" id="claudeBadge">…</span><span class="activetag">ACTIVA</span></label>
+            <p class="empty" style="padding:2px 0 6px">Usa <b>tu sesión actual de Claude Code</b> (tu suscripción), sin API key. Es la opción pensada para estas skills.</p>
+            <label class="f" for="claudeModel">Modelo</label>
+            <select id="claudeModel">
+              <option value="">El predeterminado de tu cuenta</option>
+              <option value="sonnet">Sonnet</option>
+              <option value="opus">Opus</option>
+              <option value="haiku">Haiku (más rápido, menos capaz)</option>
+            </select>
+            <div class="row"><button class="btn" id="btnClaudeCheck" type="button">Verificar sesión</button><span id="claudeMsg" class="empty" style="padding:0"></span></div>
+            <p class="empty" style="margin-top:4px">El servidor ignora cualquier <code>ANTHROPIC_API_KEY</code> del entorno para que se use tu suscripción y no cobre por API. Si no hay sesión, abre una terminal y ejecuta <code>claude auth login</code>.</p>
+          </div>
+
+          <div class="prov" id="provOai">
+            <label class="provhead"><input type="radio" name="prov" value="openai"><b>OpenAI / compatible</b><span class="pill k">API key</span><span class="activetag">ACTIVA</span></label>
+            <label class="f" for="oaiUrl">Endpoint (base URL)</label>
+            <input type="text" id="oaiUrl" value="https://api.openai.com/v1" autocomplete="off" spellcheck="false">
+            <div class="live-setup" style="margin-top:8px;gap:8px">
+              <div><label class="f" for="oaiModel">Modelo</label><input type="text" id="oaiModel" value="gpt-5-nano" autocomplete="off" spellcheck="false"></div>
+              <div><label class="f" for="oaiKey">API key</label><input type="password" id="oaiKey" placeholder="sk-…" autocomplete="off" spellcheck="false"></div>
+            </div>
+            <div class="row"><button class="btn" id="btnTest" type="button">Probar conexión</button><span id="oaiMsg" class="empty" style="padding:0"></span></div>
+            <p class="empty" style="margin-top:4px">La clave solo viaja a este servidor local, vive en su memoria y no se guarda en disco ni en el navegador. Con modelos pequeños (nano) el límite de tokens se agota rápido: el servidor espera y reintenta solo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="stephd" style="margin-top:14px"><span class="num">3</span> ¿Qué quieres lograr?</h3>
+    <label class="f" for="goal">Objetivo de la migración</label>
+    <textarea id="goal" placeholder="Ej.: Migrar esta aplicación de Java 1.1 a Angular 21 sin cambiar su comportamiento. Usar develop como tronco."></textarea>
+    <div class="row" style="align-items:flex-end">
+      <div style="flex:1;min-width:240px">
+        <label class="f" for="mode">Modo</label>
+        <select id="mode">
+          <option value="edit">Ejecutar: la IA escribe en ramas locales (con tus gates)</option>
+          <option value="plan">Solo mirar: la IA explora y propone, no escribe código</option>
+        </select>
+      </div>
+      <button class="btn pri" id="btnStart" disabled>▶ Iniciar migración</button>
+      <button class="btn" id="btnStop" disabled>■ Detener</button>
+    </div>
+    <p class="empty" id="activeLine" style="margin-top:6px"></p>
+  </div>
+
+  <div class="guide" id="guide" role="status" aria-live="polite"></div>
+
+  <div class="card" style="margin-top:12px" id="liveCard">
+    <div class="statusbar"><span class="dot" id="sdot"></span><b id="stext">Inactivo</b></div>
+    <div class="live-steps" id="lsteps"></div>
+    <p class="nowline" id="nowline"></p>
+
+    <div class="livegrid">
+      <div>
+        <h3 class="coltitle">① Lo que hace la IA <small>(solo lectura: aquí miras)</small></h3>
+        <div class="feed" id="feed" aria-live="polite"><div class="empty">Aquí aparecerán, en orden: las skills que carga la IA, los archivos que lee, los comandos que ejecuta y sus mensajes.</div></div>
+      </div>
+      <div>
+        <h3 class="coltitle">② Tu decisión <small>(aquí actúas tú)</small></h3>
+        <div id="decision" class="decision"></div>
+
+        <h3 class="coltitle" style="margin-top:16px">③ Archivos para revisar o editar</h3>
+        <div class="box" id="filesBox"><div class="empty">Cuando la IA cree o cambie archivos (spec, criterios, plan), aparecerán aquí para que los abras, compares y edites.</div></div>
+
+        <h3 class="coltitle" style="margin-top:16px">④ Estado del repositorio</h3>
+        <div id="repoState"><div class="empty">Conecta un repositorio.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<dialog id="picker" style="border:2px solid var(--line);border-radius:16px;padding:0;background:var(--card);color:var(--ink);width:min(640px,94vw)">
+  <div style="padding:14px 18px;border-bottom:1px solid var(--line)"><b>Elegir carpeta</b> <code id="pkPath" style="word-break:break-all;display:block;margin-top:4px;color:var(--mut)"></code></div>
+  <div id="pkList" style="max-height:340px;overflow:auto;padding:8px 12px"></div>
+  <div class="row" style="padding:12px 18px;margin:0;border-top:1px solid var(--line)">
+    <button class="btn" id="pkNew" type="button" title="Crear una carpeta nueva aquí">+ Carpeta nueva</button>
+    <span style="flex:1"></span>
+    <button class="btn" id="pkCancel" type="button">Cancelar</button>
+    <button class="btn pri" id="pkOk" type="button">Usar esta carpeta</button>
+  </div>
+</dialog>
+
+<dialog id="fileDlg" style="border:2px solid var(--line);border-radius:16px;padding:0;background:var(--card);color:var(--ink);width:min(900px,96vw)">
+  <div style="padding:14px 18px;border-bottom:1px solid var(--line)">
+    <b id="fdTitle"></b><span id="fdKind" class="pill" style="margin-left:8px"></span>
+    <p class="empty" id="fdHelp" style="padding:4px 0 0"></p>
+  </div>
+  <div class="filters" style="padding:10px 18px 0;margin:0">
+    <button type="button" id="fdTabDiff">Qué cambió (diff)</button>
+    <button type="button" id="fdTabEdit" class="on">Contenido (editable)</button>
+  </div>
+  <div style="padding:10px 18px">
+    <pre id="fdDiff" hidden class="difflog"></pre>
+    <textarea id="fdText" spellcheck="false" style="min-height:360px;font-family:ui-monospace,Consolas,monospace;font-size:13px"></textarea>
+    <p class="empty" id="fdMsg"></p>
+  </div>
+  <div class="row" style="padding:12px 18px;margin:0;border-top:1px solid var(--line)">
+    <span class="empty" style="flex:1;padding:0">Al guardar, la IA se enterará en tu próxima decisión y actualizará spec, criterios y plan para que sigan coherentes.</span>
+    <button class="btn" id="fdClose" type="button">Cerrar</button>
+    <button class="btn pri" id="fdSave" type="button">Guardar cambios</button>
+  </div>
+</dialog>
+
+<!-- ====================== 1. CICLO ====================== -->
+<section id="ciclo">
+  <h2>Guía: el ciclo de cada cambio</h2>
+  <p class="lead">Cada fase de la migración recorre estos mismos pasos, con su rama propia. Las <b>puertas amarillas</b> son puntos donde el agente se detiene y espera a una persona. Elige un paso para ver qué pasa en él.</p>
+  <div class="cycle" id="cycle" role="tablist" aria-label="Pasos del ciclo"></div>
+  <div class="card"><div class="cdetail" id="cycledetail" aria-live="polite"></div></div>
+</section>
+
+<!-- ====================== 2. MIGRACIÓN ====================== -->
+<section id="migracion">
+  <h2>Ejemplo terminado: cómo se migró Reversi</h2>
+  <p class="lead"><b>Esto no es tu migración:</b> es un caso ya terminado, para que veas cómo se ve el proceso completo. Línea de tiempo real del 2026-11-25 (hora de los commits). Usa <b>Anterior / Siguiente</b>, las flechas del teclado o haz clic en un evento.</p>
+  <div class="player">
+    <button class="btn" id="prev">← Anterior</button>
+    <button class="btn pri" id="next">Siguiente →</button>
+    <button class="btn" id="play" aria-pressed="false">▶ Reproducir</button>
+    <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+    <div class="stepcount" id="stepcount"></div>
+  </div>
+  <div class="tl">
+    <div class="rail" id="rail" role="list" aria-label="Eventos de la migración"></div>
+    <div class="card detail" id="detail" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ====================== 3. APROBADORES ====================== -->
+<section id="aprobadores">
+  <h2>Quién aprueba qué (las reglas del método)</h2>
+  <p class="lead">Ninguna aprobación se extiende a la acción siguiente: aprobar el spec no autoriza el merge, y aprobar el merge no autoriza el release. El agente no firma por nadie.</p>
+  <div class="gates" id="gates"></div>
+
+  <div class="actors">
+    <div class="card actor"><h3>👤 Persona desarrolladora (aprobadora)</h3><p>Es quien aprueba cada gate. En este repositorio <b>no se declaran roles</b> en <code>docs/arquitectura.md</code>, por eso el Gate 1 es de <b>una sola persona</b>. Sus respuestas quedan citadas en los commits (<code>--aprobado</code>) y en <code>.git/sdd-aprobaciones.log</code>.</p></div>
+    <div class="card actor"><h3>🤖 Agente con skills SDD</h3><p>Explora, propone, escribe pruebas en rojo, implementa y verifica. Todo en git local mediante <code>sdd-git.sh</code>. Nunca hace push, pull ni abre PR; se detiene en cada gate.</p></div>
+    <div class="card actor"><h3>🔍 Subagente de contexto limpio</h3><p>Revisa de forma independiente cada fase antes del Gate 2. En las 4 fases dio <b>APTO CON OBSERVACIONES</b>; las observaciones se cerraron con pruebas nuevas antes del merge.</p></div>
+  </div>
+
+  <div class="note"><b>Gate 1 con varios roles (opcional).</b> Si <code>docs/arquitectura.md</code> declarara <i>Aprobadores del Gate 1</i> (p. ej. Arquitecto, Líder Técnico, UI/UX, Seguridad), la propuesta exigiría el OK de <b>cada rol</b> y rechazaría el commit si el acta DoR tiene firmas pendientes. En esta migración no hubo paquete de diseño por historia, así que aplica la modalidad de una persona.</div>
+
+  <h3 style="margin:22px 0 8px;font-weight:700;font-size:18px">Registro de aprobaciones de la migración</h3>
+  <div class="table-wrap"><table id="apptable"><thead><tr><th>Hora</th><th>Gate</th><th>Qué se aprobó</th><th>Evidencia en git</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<!-- ====================== 4. TRAZABILIDAD ====================== -->
+<section id="trazabilidad">
+  <h2>Ejemplo: criterios y pruebas de Reversi</h2>
+  <p class="lead">Cada comportamiento del spec tiene un criterio <code>CA-NN</code> con un método de verificación. Filtra por fase.</p>
+  <div class="filters" id="cafilters" role="group" aria-label="Filtrar por fase"></div>
+  <div class="table-wrap"><table id="catable"><thead><tr><th>CA</th><th>Fase</th><th>Qué verifica</th><th>Verificación</th><th>Resultado</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<!-- ====================== 5. LEGACY ====================== -->
+<section id="legacy">
+  <h2>Ejemplo: qué cambió del Java a Angular</h2>
+  <p class="lead">El delta del spec es <b>NULO</b>: la paridad se mide contra el spec, no contra el Java. Solo se corrigieron tres defectos del original y se añadió español.</p>
+  <div class="two" id="fixes"></div>
+  <div class="two" style="margin-top:14px">
+    <div class="card">
+      <h3 style="font-size:17px">Capas del port (dependencia en un solo sentido)</h3>
+      <div class="layers">
+        <div class="layer"><b>ui/</b> componentes de tablero, controles y mensajes; sin lógica de reglas</div>
+        <div class="layerarrow">depende de ↓</div>
+        <div class="layer g2"><b>game/</b> GameService con señales, turnos, temporizadores cancelables, mensajes</div>
+        <div class="layerarrow">depende de ↓</div>
+        <div class="layer d"><b>domain/</b> reglas, tablero, IA y layout en TypeScript puro; el azar se inyecta</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:17px;margin-bottom:6px">Equivalencias</h3>
+      <div class="table-wrap" style="border:0"><table id="eqtable"><thead><tr><th>Legacy (Java AWT)</th><th>Angular 21</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3 style="font-size:17px;margin-bottom:6px">Pendientes tras el cierre (cada uno sería un cambio aparte)</h3>
+    <ul id="followups" style="list-style:none;display:grid;gap:5px;font-size:14.5px"></ul>
+  </div>
+</section>
+
+</main>
+
+<footer><div class="wrap">Generado a partir de <code>docs/plan-migracion-reversi-angular-2026-11-25.md</code>, <code>docs/specs/spec-partida-reversi.md</code>, <code>docs/adr/</code> y el historial de git. Código original © 2004 Keith Fenske (GPLv3+); el port mantiene la licencia.</div></footer>
+
+<script>
+/* ===================== DATOS (extraídos del repo) ===================== */
+const CYCLE = [
+  {id:'estado', n:'0', t:'Estado', s:'/sdd-estado', gate:false,
+   what:'Siempre primero: lee ramas, fase y specs desde git para saber dónde se está.',
+   inp:['Ramas, trailers SDD-* de los commits, tags'], out:['Resumen de la fase y qué sigue'],
+   who:'Nadie aprueba: es solo lectura.'},
+  {id:'expl', n:'1', t:'Exploración', s:'/sdd-exploracion', gate:false,
+   what:'Lee los specs, detecta el Caso (aquí Caso 4: migración de lenguaje) y no escribe nada.',
+   inp:['Pedido del usuario','Todos los specs del sistema como inventario','Código legacy'],
+   out:['Resumen: alcance, Caso, delta tentativo NULO','Puntos de riesgo (concurrencia, tipos)'],
+   who:'La persona confirma el Caso y el alcance antes de seguir.'},
+  {id:'prop', n:'2', t:'Propuesta', s:'/sdd-propuesta', gate:'Gate 1',
+   what:'Crea la rama del cambio, escribe el delta del spec y los criterios numerados (CA-NN, cada uno con su método de verificación) y corre el linter del spec.',
+   inp:['Resumen de la exploración','ADR vigentes'],
+   out:['Rama <tipo>/<capacidad>-<slug>','Delta del spec + criterios CA-NN + plan','Commit de propuesta = punto fijo del spec aprobado'],
+   who:'GATE 1 · La persona aprueba el diff del spec, los criterios y el plan: «¿describe lo que queremos construir?». Sin esto no se escribe código.'},
+  {id:'apl', n:'3', t:'Aplicación', s:'/sdd-aplicacion', gate:false,
+   what:'Primero pruebas en rojo, luego código en verde, en commits pequeños. Si aparece algo que el spec no previó, se detiene.',
+   inp:['Spec y criterios aprobados'],
+   out:['Pruebas en rojo → código en verde','Tareas del plan marcadas como hechas'],
+   who:'Solo si hay un hallazgo: «ajuste de spec» que requiere OK explícito de la persona (SDD-Ajuste: aprobado).'},
+  {id:'ver', n:'4', t:'Verificación', s:'/sdd-verificacion', gate:'Gate 2',
+   what:'Revisa en las dos direcciones (código cumple spec; spec describe lo construido), llena la matriz CA→prueba, corre la Definition of Done y las revisiones de seguridad, y ofrece una verificación en contexto limpio.',
+   inp:['Código en verde','Spec y plan'],
+   out:['Reporte de verificación','Matriz de trazabilidad','Veredicto del subagente independiente'],
+   who:'GATE 2 · La persona aprueba el reporte, el diff del spec si hubo ajuste, y el cierre del cambio.'},
+  {id:'merge', n:'5', t:'Merge local', s:'sdd-git.sh merge', gate:'Gate 4',
+   what:'Integra la rama al tronco con un commit de merge que lleva el reporte completo. Todo local, sin remotos.',
+   inp:['Aprobación del Gate 2'],
+   out:['Commit de merge con el reporte y plan de reversión'],
+   who:'GATE 4 · Cualquier acción que cambia el tronco o no se deshace pide OK propio (merge, tag, borrar ramas, reset).'},
+  {id:'ent', n:'6', t:'Entrega', s:'/sdd-entrega', gate:'Gate 3', pending:true,
+   what:'Calcula la versión semántica, el changelog y el tag, despliega y registra cómo volver atrás. Nunca hace push.',
+   inp:['Cambios ya mergeados en el tronco'],
+   out:['Versión, changelog, tag, humo, destino de reversión'],
+   who:'GATE 3 · La persona aprueba versión, changelog y tag. Aún no ejecutado en esta migración (el hosting está por decidir).'},
+];
+
+const GATES = [
+  {n:1,name:'Propuesta',skill:'/sdd-propuesta',who:'Persona desarrolladora (o cada rol declarado en arquitectura.md)',what:'Diff del spec, criterios CA-NN y plan',when:'Antes de escribir cualquier código',ev:'Commit de propuesta (SDD-Fase: propuesta) con el spec fijado'},
+  {n:2,name:'Verificación',skill:'/sdd-verificacion',who:'Persona desarrolladora',what:'Reporte de verificación, diff del spec si hubo ajuste, cierre del cambio',when:'Con todo en verde y la verificación independiente hecha',ev:'Cuerpo del commit de merge (reporte completo)'},
+  {n:3,name:'Entrega',skill:'/sdd-entrega',who:'Persona desarrolladora',what:'Versión, changelog y tag antes de publicar',when:'Tras mergear; solo si se despliega',ev:'Tag local. Pendiente: aún no se entrega'},
+  {n:4,name:'Acciones sensibles',skill:'siempre',who:'Persona desarrolladora',what:'Merge, tag, borrar ramas, reset, reescribir historia, excepciones al script',when:'Cada vez, sin heredar aprobaciones previas',ev:'Cita en --aprobado; .git/sdd-aprobaciones.log'},
+];
+
+/* Cada evento: hora, tipo, fase, título, resumen, rama, commits, aprobaciones, ca, tests, listas */
+const EV = [
+ {id:'import', time:'01:49', k:'Inicio', ph:'—', title:'Se importa el legacy y las skills SDD',
+  sum:'Punto de partida: un único archivo Java AWT (Reversi2.java), applet de Java 1.1 que mezcla estado, reglas, IA y vista, con un hilo auxiliar sin sincronizar. No tiene tests.',
+  branch:'main (commit raíz)', commits:['5a69d75 chore: importar legacy Reversi2 y skills SDD'], steps:[['Importar','done']],
+  inputs:['reversi-game-java-main/Reversi2.java','.claude/skills/ (skills SDD)'], outputs:['Repositorio base'], appr:[]},
+
+ {id:'f0', time:'01:49 → 01:59', k:'Fase 0 · Caso 5', ph:'Fase 0', title:'Ingeniería inversa: baseline del spec',
+  sum:'Antes de migrar se documenta lo que hace el Java: el spec de la capacidad partida-reversi, con revisión humana. Se detectan tres defectos del legacy que se corregirán en la migración, sin parchear el Java.',
+  branch:'baseline/partida-reversi-baseline', commits:['ea33b16 spec: baseline del spec (01:49)','3191b77 spec: corregir fin inmediato solo en 2x2 (01:54)','198bdb5 docs: declarar develop como tronco (01:56)','3595b75 merge a develop (01:59)'],
+  steps:[['Exploración','done'],['Revisión humana','gate'],['Merge solo-docs','done']],
+  inputs:['Reversi2.java','README, cabecera del código'],
+  outputs:['docs/specs/spec-partida-reversi.md (Estado: en desarrollo)','Defectos A, B y C identificados'],
+  appr:[{g:'Revisión humana del baseline',t:'El usuario resolvió las contradicciones doc/código: tablero 6×10 (no 8×8), colores y rectángulos redondeados como el código, Skip Turn permitido con jugadas legales.'}],
+  extra:{title:'Defectos a corregir con la migración',items:['A · Skip Turn congela la interfaz (sleeps de 1,8 s en el hilo de la GUI)','B · New Game durante la jugada de la computadora puede aplicarla sobre otra partida','C · el resaltado de casilla persiste al salir del tablero']}},
+
+ {id:'adr1', time:'02:05 → 02:08', k:'Arquitectura', ph:'ADR 0001', title:'ADR 0001: se decide el stack Angular 21',
+  sum:'Cambio de arquitectura dedicado, antes de migrar: Angular 21 zoneless con señales, tres capas, Vitest, Transloco para es/en, tablero DOM + CSS grid y licencia GPLv3+.',
+  branch:'arq/stack-angular-21', commits:['6ca0db3 docs(arq): ADR 0001 (02:05)','052ba60 docs(arq): aceptar ADR 0001 (02:08)','9b90371 merge(arq) a develop (02:08)'],
+  steps:[['ADR','done'],['Aceptar','gate'],['Merge','done']],
+  inputs:['Pedido: migrar a Angular 21','Spec del baseline'], outputs:['docs/adr/0001-stack-angular-21.md','docs/arquitectura.md actualizado'],
+  appr:[{g:'Aceptación del ADR y merge',t:'ADR aceptado y mergeado; verificado con sdd-lint, solo docs. Reversión: git revert -m 1.'}]},
+
+ {id:'plan', time:'02:20', k:'Propuesta · Gate 1', ph:'Plan', title:'Propuesta del Caso 4: plan de 4 fases',
+  sum:'El spec solo recibe Decisiones y Referencias (delta NULO sobre lo prometido). El plan padre divide la migración en 4 fases, de lo más aislado (lógica pura) a lo más expuesto (interfaz), cada una con su rama, su ciclo y su merge.',
+  branch:'migrate/partida-reversi-dominio (nace aquí)', commits:['44bff5f spec(partida-reversi): migrar a Angular 21 (plan en 4 fases)'],
+  steps:[['Exploración','done'],['Propuesta','done'],['GATE 1','gate']],
+  inputs:['Spec baseline','ADR 0001','Inventario: 1 capacidad (se migra por fases dentro de ella)'],
+  outputs:['docs/plan-migracion-reversi-angular-2026-11-25.md','36 criterios CA-01…CA-36 con método de verificación','Catálogo de textos en/es'],
+  appr:[{g:'Gate 1 · Plan y spec aprobados',t:'Commit de propuesta 44bff5f = punto fijo del spec aprobado. Decisiones del usuario: paridad medida contra el spec (sin arnés Java); layout como función pura; Node 26.13.1 para construir.'}]},
+
+ {id:'f1', time:'02:34 → 02:49', k:'Fase 1', ph:'F1', title:'F1 · Dominio e IA',
+  sum:'Proyecto reversi-angular/ y capa domain/ en TypeScript puro: tablero, reglas, IA Easy y Medium, layout y hit-test. Sin Angular; el azar se inyecta.',
+  branch:'migrate/partida-reversi-dominio', commits:['fdcbbb9 crear proyecto Angular 21 (02:34)','712dd46 pruebas en rojo CA-01…12 (02:39)','ea6ffc0 · 3cede3b · c1fb736 · 03be166 código en verde (02:40)','a8cea76 + b186fb0 refuerzos tras verificar (02:48)','1555b6c merge (02:49)'],
+  steps:[['Propuesta (G1)','gate'],['Pruebas en rojo','done'],['Código en verde','done'],['Verificación','done'],['GATE 2','gate'],['Merge','done']],
+  ca:'CA-01…CA-12', tests:32, newTests:32,
+  verdict:'APTO CON OBSERVACIONES',
+  verif:['12/12 criterios con prueba pasando','4 debilidades de pruebas detectadas por el subagente, cerradas y comprobadas con cambios incorrectos','Cruce con Reversi2.java: layout, hit-test, reglas e IA coinciden'],
+  risks:['Node 26.13.1 fuera de la tabla oficial de Angular 21 (decisión del usuario; compila y pasa)','npm audit y licencias transitivas: pendientes (requieren red)'],
+  appr:[{g:'Gate 2 · Cierre de F1',t:'Merge 1555b6c tras el reporte de verificación.'}]},
+
+ {id:'f2', time:'02:54 → 03:12', k:'Fase 2', ph:'F2', title:'F2 · Servicio de partida',
+  sum:'GameService con señales: turnos, clic del usuario en sus 7 casos, Skip Turn, reinicios, dificultad y mensajes por clave. Reloj inyectable en lugar de hilos; cada reinicio cancela lo pendiente.',
+  branch:'migrate/partida-reversi-juego', commits:['d9739f5 diseño de la F2 (02:54) — Gate 1','6fd3652 pruebas en rojo CA-13…23 (02:57)','1ffc65d GameService (03:00)','f7fdcc3 refuerzos tras verificar (03:11)','bdba19c merge (03:12)'],
+  steps:[['Diseño (G1)','gate'],['Pruebas en rojo','done'],['Código en verde','done'],['Verificación','done'],['GATE 2','gate'],['Merge','done']],
+  ca:'CA-13…CA-23', tests:83, newTests:51, verdict:'APTO CON OBSERVACIONES',
+  fixes:['Fix A · Skip Turn retorna de inmediato (CA-16)','Fix B · cancelación por generación (CA-19)','Fix C · resaltado derivado (CA-20)'],
+  verif:['11/11 criterios con prueba pasando; las 32 de F1 siguen verdes','28 cambios incorrectos probados: 26 detectados, 2 equivalentes','4 pruebas nuevas por observaciones del subagente'],
+  risks:['El servicio no valida sus entradas: la UI debe pasar solo valores permitidos (seguimiento para F3)'],
+  appr:[{g:'Gate 1 · Diseño de la F2',t:'Decisiones técnicas del plan aprobadas (reloj inyectable, mensajes clave+parámetros, cancelación por generación).'},{g:'Gate 2 · Cierre de F2',t:'Merge bdba19c. Sin ajustes al spec.'}]},
+
+ {id:'f3', time:'03:16 → 03:46', k:'Fase 3', ph:'F3', title:'F3 · Interfaz y tablero',
+  sum:'Pantalla con selectores, botones, línea de mensaje y tablero en DOM + CSS. Primera dependencia: Transloco 8.4.0. El mouse se traduce con hitTest; el contenedor se mide con ResizeObserver. Aviso de ventana con prioridad.',
+  branch:'migrate/partida-reversi-ui', commits:['f8c2729 diseño de la interfaz (03:16) — Gate 1','37dad98 pruebas en rojo (03:20)','1729d49 · 0ef35b3 · 427d4c6 pantalla, tablero, controles (03:24)','95dfd5d spec: ajuste del arco (03:35) — aprobado','8f81a87 fix: fichas redondeadas (03:39)','0061483 merge (03:46)'],
+  steps:[['Diseño (G1)','gate'],['Pruebas en rojo','done'],['Código en verde','done'],['Hallazgo → ajuste','gate'],['Verificación','done'],['GATE 2','gate'],['Merge','done']],
+  ca:'CA-24…CA-29', tests:117, newTests:34, verdict:'APTO CON OBSERVACIONES',
+  verif:['CA-24…27 y 29 con prueba pasando; CA-28 manual: lo jugó el usuario (6×10 y 8×8)','Navegador real (ng serve + Playwright): sin errores de consola','17 cambios incorrectos: 12 detectados, 5 cerrados con pruebas nuevas'],
+  finding:'La verificación independiente detectó que las fichas salían como círculos: en Java, fillRoundRect recibe el diámetro del arco; el baseline lo había leído como radio. Se detuvo, se propuso el ajuste del spec y se aplicó con OK.',
+  risks:['Cargador del catálogo sin manejo de errores','100vh puede recortar el tablero en móviles','16 paquetes nuevos de Transloco: MIT salvo argparse (Python-2.0, permisiva)'],
+  appr:[{g:'Gate 1 · Diseño de la F3',t:'Incluye decisión del usuario: al desaparecer el aviso de ventana vuelve el último mensaje del juego (en el legacy quedaba vacío).'},{g:'Ajuste de spec por descubrimiento',t:'95dfd5d con trailer SDD-Ajuste: aprobado. El 65 % del paso es el diámetro del arco.'},{g:'CA-28 manual',t:'Partida completa en el navegador jugada por la persona usuaria.'},{g:'Gate 2 · Cierre de F3',t:'Merge 0061483.'}]},
+
+ {id:'f4', time:'03:50 → 04:13', k:'Fase 4 · cierre', ph:'F4', title:'F4 · i18n y cierre de la migración',
+  sum:'Catálogo en español con las mismas claves que el inglés, selector de idioma que traduce al instante sin alterar la partida, atributo lang, atribución a Keith Fenske, README del port. El spec pasa a «desplegado» y el plan a «destilado».',
+  branch:'migrate/partida-reversi-i18n', commits:['a5a8bc2 diseño de i18n y cierre (03:50) — Gate 1','7af8dbc pruebas en rojo (03:53)','c2d9fd9 · b4d1ea5 catálogo es y selector (03:58)','9a6bbc9 atribución en src/ (03:59)','c189eb9 cierra: spec y plan finales (04:12)','4c5e5a7 merge (04:13)'],
+  steps:[['Diseño (G1)','gate'],['Pruebas en rojo','done'],['Código en verde','done'],['Verificación + global','done'],['GATE 2','gate'],['Cierre','done'],['Merge','done']],
+  ca:'CA-30…CA-36', tests:137, newTests:20, verdict:'APTO CON OBSERVACIONES · «cerrar la migración: SÍ CON REPAROS»',
+  verif:['Reparos atendidos: app.config.ts y el cargador HTTP sin pruebas → app.config.spec.ts; título de la pestaña sin traducir → ahora sí','ng build OK (191 kB) y ng test 137 pruebas OK','npm audit --omit=dev: 0 vulnerabilidades (16 moderadas solo en herramientas de desarrollo)','Legacy intacto: git diff vacío en reversi-game-java-main/'],
+  risks:['Licencias del bundle: MIT, Apache-2.0, 0BSD; compatibles con GPLv3+','Transloco depende de @jsverse/utils beta (versión fija)'],
+  appr:[{g:'Gate 1 · Diseño de la F4',t:'Decisión del usuario: la app siempre abre en inglés, idiomas nombrados en su lengua, sin recordar la elección.'},{g:'CA-34 · Revisión del diff del spec',t:'Spec a «desplegado» solo si CA-16, CA-19, CA-20 y CA-29 pasaron; revisado por la persona usuaria.'},{g:'Higiene tras verificación independiente',t:'Aprobada por el usuario (commit 47baf42).'},{g:'Gate 2 · Cierre de F4',t:'Merge 4c5e5a7: fin de la migración.'}]},
+
+ {id:'adr2', time:'04:30 → 04:31', k:'Arquitectura', ph:'ADR 0002', title:'ADR 0002: el tronco se llama main',
+  sum:'La persona dueña del repo renombró develop a main al terminar. Este ADR retroactivo deja coherentes documentos y configuración (sdd.tronco). Los «develop» del plan son históricos y se leen como main.',
+  branch:'rama arq/ (ADR retroactivo)', commits:['97e62b7 docs(arq): ADR 0002 (04:30)','70c2199 aceptar ADR 0002 (04:30)','f8f4eff merge(arq) a main (04:31)'],
+  steps:[['ADR','done'],['Aceptar','gate'],['Merge','done']], inputs:['Rama renombrada a main'], outputs:['docs/adr/0002-tronco-main.md'],
+  appr:[{g:'Aceptación y merge del ADR',t:'Solo docs. Reversión: git revert -m 1 y git config sdd.tronco develop.'}]},
+
+ {id:'pres', time:'04:32', k:'Extra', ph:'Presentación', title:'Presentación de las skills y del caso de uso',
+  sum:'5 slides con el resumen de las skills SDD y el caso de uso de la migración en línea de tiempo.',
+  branch:'rama de presentación', commits:['1710346 docs(presentacion) (04:32)','fd16d00 merge a main (04:32)'],
+  steps:[['Presentación','done'],['Excepción autorizada','gate'],['Merge','done']],
+  inputs:['Resumen del ciclo SDD'], outputs:['presentacion-3slides/index.html'],
+  appr:[{g:'Excepción al script de merge',t:'Merge con git directo (479 líneas y 6 archivos superan la vía rápida). Aprobación: «sí, mergea la presentación a main».'}]},
+
+ {id:'next', time:'Pendiente', k:'Siguiente', ph:'Futuro', title:'Lo que queda: cambios aparte, cada uno con su ciclo',
+  sum:'La migración está cerrada. Estos seguimientos quedaron registrados en el plan y el README del port; ninguno es parte de ella.',
+  branch:'—', commits:[], steps:[['Entrega /sdd-entrega','gate']], future:true,
+  inputs:[], outputs:[], appr:[], extra:{title:'Seguimientos',items:['Retirar el código Java original (reversi-game-java-main/)','Elegir hosting y despliegue (pide /sdd-arquitectura)','Aviso propio si falla la carga del catálogo','Recordar o detectar el idioma','Subir de versión de Angular (resolvería las 16 moderadas de desarrollo)']}},
+];
+
+const APPROVALS = [
+ ['01:49','Revisión','Baseline del spec tras revisión humana (contradicciones resueltas)','ea33b16 · 3595b75'],
+ ['02:08','Gate 4','ADR 0001 aceptado y mergeado','052ba60 · 9b90371'],
+ ['02:20','Gate 1','Plan de 4 fases, spec y criterios CA-01…36','44bff5f'],
+ ['02:49','Gate 2','Cierre de F1 (32 pruebas)','1555b6c'],
+ ['02:54','Gate 1','Diseño del servicio de partida (F2)','d9739f5'],
+ ['03:12','Gate 2','Cierre de F2 (83 pruebas)','bdba19c'],
+ ['03:16','Gate 1','Diseño de la interfaz (F3), con la decisión sobre el aviso de ventana','f8c2729'],
+ ['03:35','Ajuste','Ajuste del spec: 65 % = diámetro del arco','95dfd5d · SDD-Ajuste: aprobado'],
+ ['03:46','Gate 2','Cierre de F3 (117 pruebas; CA-28 jugado por la persona)','0061483'],
+ ['03:50','Gate 1','Diseño de i18n y cierre (F4)','a5a8bc2'],
+ ['04:11','Aprobación','Higiene tras la verificación independiente de F4','47baf42'],
+ ['04:13','Gate 2','Cierre de la migración (137 pruebas); spec desplegado, plan destilado','4c5e5a7 · c189eb9'],
+ ['04:31','Gate 4','ADR 0002 aceptado y mergeado','70c2199 · f8f4eff'],
+ ['04:32','Excepción','Merge de la presentación con git directo','fd16d00'],
+];
+
+const CA = [
+ ['CA-01','F1','Posición inicial por tamaño (cuadrado central 2×2)','auto','domain/board.spec.ts'],
+ ['CA-02','F1','Conteo de volteos en 8 direcciones','auto','domain/rules.spec.ts'],
+ ['CA-03','F1','Aplicar jugada voltea exactamente lo atrapado','auto','domain/rules.spec.ts'],
+ ['CA-04','F1','Invariante: toda jugada legal voltea al menos una ficha','auto','domain/rules.spec.ts'],
+ ['CA-05','F1','Fin de partida y resultado (gana, pierde, empate)','auto','domain/rules.spec.ts'],
+ ['CA-06','F1','Fin inmediato solo en 2×2 (63 tamaños con jugada)','auto','domain/rules.spec.ts'],
+ ['CA-07','F1','IA Easy: uniforme entre jugadas legales, nunca ilegal','auto','domain/ai.spec.ts'],
+ ['CA-08','F1','IA Medium: máximo de volteos, uniforme entre empates','auto','domain/ai.spec.ts'],
+ ['CA-09','F1','Tamaños permitidos y defaults (6×10, Medium)','auto','domain/board.spec.ts'],
+ ['CA-10','F1','Proporciones del layout (2 %, 7 %, 10 px, arco 65 %)','auto','domain/layout.spec.ts'],
+ ['CA-11','F1','Hit-test: clic solo dentro de la ficha','auto','domain/layout.spec.ts'],
+ ['CA-12','F1','Indicadores de espacio insuficiente (angosto/bajo)','auto','domain/layout.spec.ts'],
+ ['CA-13','F2','Clic del usuario: 7 casos en orden; rechazos no tocan el tablero','auto','game/game.service.spec.ts'],
+ ['CA-14','F2','Skip Turn: cede el turno, mensajes por estado','auto','game/game.service.spec.ts'],
+ ['CA-15','F2','Tiempos de la computadora: 1000–2500 ms y parpadeo 600/400/600/200','auto','game/game.service.spec.ts','FakeScheduler'],
+ ['CA-16','F2','FIX A · Skip Turn no bloquea la interfaz','auto','game/game.service.spec.ts','fix'],
+ ['CA-17','F2','Pases de turno: computadora o usuario sin jugadas','auto','game/game.service.spec.ts'],
+ ['CA-18','F2','Fin de partida evaluado tras la espera, con cantidades','auto','game/game.service.spec.ts'],
+ ['CA-19','F2','FIX B · New Game o cambio de tamaño cancela la jugada pendiente','auto','game/game.service.spec.ts','fix'],
+ ['CA-20','F2','FIX C · resaltado solo en el turno del usuario y se quita al salir','auto','game/game.service.spec.ts','fix'],
+ ['CA-21','F2','Cambiar dificultad no reinicia la partida','auto','game/game.service.spec.ts'],
+ ['CA-22','F2','Inicio, New Game, cambio de tamaño y 2×2 terminado','auto','game/game.service.spec.ts'],
+ ['CA-23','F2','Invariante: 32 partidas simuladas con semilla','auto','game/game.service.spec.ts'],
+ ['CA-24','F3','Controles con textos del catálogo y defaults','auto','ui/controls.component.spec.ts'],
+ ['CA-25','F3','Tablero: colores, líneas y fichas de esquinas redondeadas','auto','ui/board.component.spec.ts'],
+ ['CA-26','F3','Mouse y clic traducidos a casilla; mouseleave','auto','ui/board.component.spec.ts'],
+ ['CA-27','F3','Recalcular al cambiar tamaño; aviso con prioridad','auto','ui/board.component.spec.ts'],
+ ['CA-28','F3','Partida completa en el navegador (6×10 y 8×8)','manual','jugada por la persona usuaria'],
+ ['CA-29','F3','FIX A en la UI · la interfaz responde durante el parpadeo','auto','app.component.spec.ts','fix'],
+ ['CA-30','F4','Catálogos en/es completos y sin texto literal','auto','i18n/catalogos.spec.ts · app.component.spec.ts'],
+ ['CA-31','F4','Selector de idioma: instantáneo, sin alterar la partida','auto','app.component.spec.ts · controls · languages'],
+ ['CA-32','F4','Plurales y parámetros en ambos idiomas','auto','i18n/catalogos.spec.ts'],
+ ['CA-33','F4','Atribución a Keith Fenske y LICENSE GPLv3','medición','grep -rL "Keith Fenske" src (0 archivos)'],
+ ['CA-34','F4','Spec «desplegado» y plan «destilado»','manual','revisión del diff del spec por la persona'],
+ ['CA-35','F4','ng build y ng test completos','auto','ng build · ng test (137 pruebas)'],
+ ['CA-36','F4','El legacy no cambia','medición','git diff --stat … -- reversi-game-java-main/ vacío'],
+];
+
+const FIXES = [
+ ['A','Interfaz congelada al saltar turno','Reversi2.java:367-372, 1192-1198','En el legacy, Skip Turn ejecutaba la jugada en el hilo de la GUI con sleeps de 1,8 s. En Angular, la jugada se decide al instante y solo el parpadeo es asíncrono, con temporizadores cancelables.','CA-16 · CA-29'],
+ ['B','Jugada pendiente aplicada sobre una partida nueva','Reversi2.java:1359-1370, 1190-1204','Un hilo mutaba el tablero sin sincronizar. Ahora cada reinicio incrementa una «generación» y cancela los temporizadores: ninguna jugada puede aplicarse a otra partida.','CA-19'],
+ ['C','Resaltado persistente','Reversi2.java:1532-1544','El legacy no tenía mouseExited. Ahora el resaltado es derivado: solo existe en el turno del usuario, sobre una jugada legal, y desaparece al salir del tablero.','CA-20 · CA-26'],
+];
+const EQ = [
+ ['Reversi2 (Applet + main)','Componente raíz standalone + GameService'],
+ ['Reversi2Board (Canvas)','BoardComponent (DOM + CSS grid)'],
+ ['Choice, Button, Label','<select>, <button>, <p role="status">'],
+ ['int[][] boardData con PlayHOVER','Tablero inmutable en domain/; resaltado como señal aparte'],
+ ['Thread + Thread.sleep','Temporizadores cancelables en game/'],
+ ['Math.random()','Función random inyectable (determinista en pruebas)'],
+ ['messageText.setText(...)','Señal de mensaje (clave + parámetros) traducida por Transloco'],
+];
+
+/* ===================== UTILIDADES ===================== */
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const list = a => a&&a.length ? '<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>' : '';
+
+/* tema */
+(function(){
+  let t=null; try{t=localStorage.getItem('theme')}catch(e){}
+  if(t) document.documentElement.setAttribute('data-theme',t);
+  $('#themebtn').addEventListener('click',()=>{
+    const dark = document.documentElement.getAttribute('data-theme')==='dark' ||
+      (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme:dark)').matches);
+    const n = dark?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    try{localStorage.setItem('theme',n)}catch(e){}
+  });
+})();
+
+/* ===================== 1. CICLO ===================== */
+let cyc = 2;
+function renderCycle(){
+  $('#cycle').innerHTML = CYCLE.map((c,i)=>`
+    <button class="cstep ${i===cyc?'on':''}" role="tab" aria-selected="${i===cyc}" data-i="${i}">
+      ${c.gate?`<span class="gate">${c.gate}</span>`:''}
+      <span class="n">PASO ${c.n}</span><b>${c.t}</b><small>${esc(c.s)}</small>
+    </button>`).join('');
+  const c = CYCLE[cyc];
+  $('#cycledetail').innerHTML = `
+    <div><h4>Qué pasa</h4><p>${esc(c.what)}</p>${c.pending?'<p style="margin-top:8px"><span class="pill p">Aún no ejecutado en esta migración</span></p>':''}</div>
+    <div><h4>Insumos</h4>${list(c.inp)}</div>
+    <div><h4>Entregables</h4>${list(c.out)}</div>
+    <div class="appr"><h4>Quién aprueba</h4><p>${esc(c.who)}</p></div>`;
+}
+$('#cycle').addEventListener('click',e=>{const b=e.target.closest('.cstep'); if(b){cyc=+b.dataset.i; renderCycle();}});
+
+/* ===================== 2. MIGRACIÓN ===================== */
+let cur = 0, timer = null;
+function renderRail(){
+  $('#rail').innerHTML = EV.map((e,i)=>`
+    <button class="ev ${i===cur?'on':''} ${i<cur?'done':''}" data-i="${i}" role="listitem" aria-current="${i===cur?'step':'false'}">
+      <span class="t"><span class="mono">${esc(e.time)}</span><span class="pill ${e.future?'p':(e.k.includes('Gate')||e.k.includes('Propuesta')?'y':'')}">${esc(e.k)}</span></span>
+      <b>${esc(e.title)}</b>
+    </button>`).join('');
+  $('#bar').style.width = (cur/(EV.length-1)*100)+'%';
+  $('#stepcount').textContent = `Evento ${cur+1} de ${EV.length}`;
+  $('#prev').disabled = cur===0; $('#next').disabled = cur===EV.length-1;
+}
+function renderDetail(){
+  const e = EV[cur];
+  const flow = e.steps.map(([n,k],i)=>`${i?'<span class="a" aria-hidden="true">→</span>':''}<div class="s ${k}"><b>${esc(n)}</b>${k==='gate'?'<span style="font-size:12px;color:var(--mut)">aprobación humana</span>':(e.future?'<span style="font-size:12px;color:var(--mut)">pendiente</span>':'<span style="font-size:12px;color:var(--green)">hecho</span>')}</div>`).join('');
+  let h = `<h3>${esc(e.title)}</h3>
+    <div class="meta">
+      <span class="pill k">${esc(e.time)}</span>
+      ${e.ph!=='—'?`<span class="pill">${esc(e.ph)}</span>`:''}
+      ${e.ca?`<span class="pill g">${esc(e.ca)}</span>`:''}
+      ${e.tests?`<span class="pill g">${e.tests} pruebas (+${e.newTests})</span>`:''}
+    </div>
+    <p class="sum">${esc(e.sum)}</p>
+    <div class="flow" aria-label="Pasos de esta etapa">${flow}</div>`;
+  if(e.branch && e.branch!=='—') h += `<p style="margin:8px 0;font-size:14px"><b>Rama:</b> <code>${esc(e.branch)}</code></p>`;
+  h += '<div class="dgrid">';
+  if(e.appr && e.appr.length){
+    h += `<div class="box ap"><h4>Aprobaciones</h4><ul>${e.appr.map(a=>`<li><b>${esc(a.g)}.</b> ${esc(a.t)}</li>`).join('')}</ul></div>`;
+  }
+  if(e.verdict){
+    h += `<div class="box ok"><h4>Verificación · ${esc(e.verdict)}</h4>${list(e.verif)}</div>`;
+  }
+  if(e.fixes) h += `<div class="box"><h4>Defectos del legacy cerrados</h4>${list(e.fixes)}</div>`;
+  if(e.finding) h += `<div class="box ap"><h4>Hallazgo durante la verificación</h4><p style="font-size:14.5px">${esc(e.finding)}</p></div>`;
+  if(e.inputs&&e.inputs.length) h += `<div class="box"><h4>Insumos</h4>${list(e.inputs)}</div>`;
+  if(e.outputs&&e.outputs.length) h += `<div class="box"><h4>Entregables</h4>${list(e.outputs)}</div>`;
+  if(e.risks) h += `<div class="box"><h4>Riesgos y notas</h4>${list(e.risks)}</div>`;
+  if(e.extra) h += `<div class="box"><h4>${esc(e.extra.title)}</h4>${list(e.extra.items)}</div>`;
+  if(e.commits&&e.commits.length) h += `<div class="box"><h4>Commits</h4>${list(e.commits)}</div>`;
+  h += '</div>';
+  if(e.ca){
+    const m = e.ca.match(/CA-(\d+)…CA-(\d+)/);
+    if(m){ let c=''; for(let i=+m[1];i<=+m[2];i++){const id='CA-'+String(i).padStart(2,'0'); c+=`<span class="chip">${id} ✓</span>`;} h += `<div class="cachips" aria-label="Criterios cumplidos">${c}</div>`; }
+  }
+  $('#detail').innerHTML = h;
+}
+function go(i){ cur = Math.max(0,Math.min(EV.length-1,i)); renderRail(); renderDetail(); }
+$('#rail').addEventListener('click',e=>{const b=e.target.closest('.ev'); if(b){stop(); go(+b.dataset.i);}});
+$('#prev').onclick=()=>{stop(); go(cur-1)};
+$('#next').onclick=()=>{stop(); go(cur+1)};
+function stop(){ if(timer){clearInterval(timer);timer=null;} $('#play').textContent='▶ Reproducir'; $('#play').setAttribute('aria-pressed','false'); }
+$('#play').onclick=()=>{
+  if(timer){stop();return;}
+  if(cur===EV.length-1) go(0);
+  $('#play').textContent='⏸ Pausar'; $('#play').setAttribute('aria-pressed','true');
+  timer=setInterval(()=>{ if(cur>=EV.length-1){stop();return;} go(cur+1); },3500);
+};
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,select,textarea')) return;
+  const r = $('#migracion').getBoundingClientRect();
+  if(r.top>innerHeight*0.6 || r.bottom<innerHeight*0.2) return;
+  if(e.key==='ArrowRight'){stop();go(cur+1)} else if(e.key==='ArrowLeft'){stop();go(cur-1)}
+});
+
+/* ===================== 3. APROBADORES ===================== */
+$('#gates').innerHTML = GATES.map(g=>`
+  <div class="gcard"><h3><span class="gn">${g.n}</span>${esc(g.name)}</h3>
+    <dl><div><dt>Skill</dt><dd><code>${esc(g.skill)}</code></dd></div>
+    <div><dt>Quién aprueba</dt><dd>${esc(g.who)}</dd></div>
+    <div><dt>Qué aprueba</dt><dd>${esc(g.what)}</dd></div>
+    <div><dt>Cuándo</dt><dd>${esc(g.when)}</dd></div>
+    <div><dt>Evidencia</dt><dd>${esc(g.ev)}</dd></div></dl></div>`).join('');
+$('#apptable tbody').innerHTML = APPROVALS.map(a=>`<tr><td class="num">${a[0]}</td><td><span class="pill ${a[1].startsWith('Gate 1')||a[1]==='Gate 2'?'y':''}">${esc(a[1])}</span></td><td>${esc(a[2])}</td><td class="mono">${esc(a[3])}</td></tr>`).join('');
+
+/* ===================== 4. TRAZABILIDAD ===================== */
+let phF = 'Todas';
+function renderCA(){
+  const phs = ['Todas','F1','F2','F3','F4'];
+  $('#cafilters').innerHTML = phs.map(p=>`<button class="${p===phF?'on':''}" data-p="${p}" aria-pressed="${p===phF}">${p}</button>`).join('');
+  const rows = CA.filter(r=>phF==='Todas'||r[1]===phF);
+  $('#catable tbody').innerHTML = rows.map(r=>{
+    const tag = r[3]==='auto'?'<span class="tag">automática</span>':r[3]==='manual'?'<span class="tag man">manual</span>':'<span class="tag med">medición</span>';
+    return `<tr><td class="num"><b>${r[0]}</b> ${r[5]==='fix'?'<span class="tag fix">fix</span>':''}</td><td>${r[1]}</td><td>${esc(r[2])}</td><td>${tag}<div class="mono" style="color:var(--mut);margin-top:3px">${esc(r[4])}</div></td><td class="num"><span class="pill g">✓ 2026-11-25</span></td></tr>`;}).join('');
+}
+$('#cafilters').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){phF=b.dataset.p; renderCA();}});
+
+/* ===================== 5. LEGACY ===================== */
+$('#fixes').innerHTML = FIXES.map(f=>`<div class="card fix"><h3><span class="pill k">Defecto ${f[0]}</span> ${esc(f[1])}</h3><div class="ref mono">${esc(f[2])}</div><p>${esc(f[3])}</p><p><span class="pill g">Cubierto por ${esc(f[4])}</span></p></div>`).join('');
+$('#eqtable tbody').innerHTML = EQ.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('');
+$('#followups').innerHTML = EV.find(e=>e.id==='next').extra.items.map(x=>`<li>⬜ ${esc(x)}</li>`).join('');
+
+/* nav: resaltar sección visible */
+const links=[...document.querySelectorAll('nav.tabs a')];
+const io=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+en.target.id));}})},{rootMargin:'-30% 0px -60% 0px'});
+document.querySelectorAll('main section').forEach(s=>io.observe(s));
+
+/* ===================== 0. EN VIVO ===================== */
+(function live(){
+  const BASE_TITLE = document.title;
+  const EXPECTED_SERVER = 6;
+  const L = { status:'idle', phase:null, gate:null, repo:null, seen:new Set(), toolEls:new Map(), summary:'', errMsg:'', draft:'', ft:null, lastGateKey:'' };
+  const STEPS = CYCLE.filter(c=>c.id!=='merge');
+  const hhmm = t => new Date(t).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const lsGet = k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+  const lsSet = (k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+  const post = async (url,body)=>{
+    const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+    const j = await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j;
+  };
+  const getJ = async u=>{ const r=await fetch(u); const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; };
+  const feed = $('#feed');
+  // Cronómetro de los comandos en curso: la salida solo llega cuando terminan, y instalar paquetes puede tardar varios minutos.
+  setInterval(()=>{
+    const ticks = document.querySelectorAll('.tick'); let longest = 0;
+    ticks.forEach(e=>{ const s=Math.max(0,Math.floor((Date.now()-Number(e.dataset.t0))/1000)); longest=Math.max(longest,s);
+      e.textContent = '⏳ '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+(s>120?' · sigue en curso (instalar paquetes puede tardar)':''); });
+    const note = $('#runNote'); if(note) note.textContent = ticks.length ? `Hay un comando ejecutándose desde hace ${Math.floor(longest/60)}:${String(longest%60).padStart(2,'0')}. La salida aparece al terminar; si el contador avanza, no está trabado.` : '';
+  },1000);
+
+  /* ---------------- estado, guía y pasos ---------------- */
+  function renderSteps(){
+    const idx = STEPS.findIndex(s=>s.id===L.phase);
+    $('#lsteps').innerHTML = STEPS.map((s,i)=>{
+      const on = s.id===L.phase && L.status==='running';
+      const done = (L.seen.has(s.id) && s.id!==L.phase) || (idx>i);
+      return `<span class="lstep ${on?'on':''} ${done?'done':''}" title="${esc(s.what)}">${s.n}. ${esc(s.t)}${s.gate?' 🚦':''}</span>`;
+    }).join('');
+    const cur = STEPS.find(s=>s.id===L.phase);
+    $('#nowline').innerHTML = cur
+      ? `<b>Etapa actual: ${esc(cur.t)}.</b> ${esc(cur.what)}`
+      : 'Las etapas con 🚦 son las que terminan en una aprobación tuya. Pasa el mouse sobre una etapa para ver qué hace.';
+  }
+  const STATUS_TXT = {idle:'Inactivo',running:'La IA está trabajando…','waiting-gate':'Esperando tu decisión','waiting-input':'Esperando tu respuesta',done:'Terminó',error:'Error'};
+  function renderGuide(){
+    const g = $('#guide'); let cls='guide', html='';
+    const goal = $('#goal').value.trim();
+    if(!L.repo) html = '<span><b>👉 Paso 1:</b> conecta el repositorio que quieres migrar (arriba a la izquierda).</span>';
+    else if(L.status==='idle') html = goal ? '<span><b>👉 Todo listo.</b> Pulsa <b>▶ Iniciar migración</b>.</span>' : '<span><b>👉 Paso 2:</b> escribe el objetivo, elige la IA y pulsa <b>▶ Iniciar migración</b>.</span>';
+    else if(L.status==='running') html = '<span>⏳ <b>La IA está trabajando.</b> No tienes que hacer nada ahora: en la columna ① ves qué hace. La página te avisará cuando te toque decidir.</span>';
+    else if(L.status==='waiting-gate'){ cls+=' turn'; html = `<span>🚦 <b>Te toca a ti: ${esc(L.gate?L.gate.name:'aprobación')}.</b> Revisa lo que propone la IA y decide en la columna ② (a la derecha).</span> <button class="btn pri" id="goDecide" type="button">Ir a decidir</button>`; }
+    else if(L.status==='waiting-input'){ cls+=' turn'; html = '<span>💬 <b>La IA terminó su turno y espera tu respuesta.</b> Contéstale en la columna ②.</span> <button class="btn pri" id="goDecide" type="button">Ir a responder</button>'; }
+    else if(L.status==='done'){ cls+=' ok'; html = `<span>✅ <b>La IA terminó.</b> ${esc(L.summary||'')} Revisa los archivos y los commits; si quieres algo más, pídeselo en la columna ②.</span>`; }
+    else if(L.status==='error'){ cls+=' bad'; html = `<span>⚠ <b>Algo falló:</b> ${esc(L.errMsg||'error desconocido')}</span>`; }
+    g.className = cls; g.innerHTML = html;
+    const gd = $('#goDecide'); if(gd) gd.onclick = ()=>$('#decision').scrollIntoView({behavior:'smooth',block:'center'});
+    document.title = (L.status==='waiting-gate'||L.status==='waiting-input') ? '🚦 Te toca decidir · '+BASE_TITLE : BASE_TITLE;
+  }
+  function renderDecision(){
+    const d = $('#decision'); const keep = ()=>esc(L.draft);
+    const area = (label,ph)=>`<label class="f" for="dcomment" style="margin-top:8px">${label}</label><textarea id="dcomment" style="min-height:70px" placeholder="${ph}">${keep()}</textarea>`;
+    let cls='decision', h='';
+    if(L.status==='waiting-gate' && L.gate){
+      cls+=' turn';
+      h = `<h3>🚦 ${esc(L.gate.name)}</h3>
+        <p><b>Qué te pide la IA:</b> ${esc(L.gate.what)}</p>
+        <ol><li>Lee el mensaje resaltado en amarillo en la columna ① (es lo que propone).</li><li>Abre los archivos de la sección ③ si quieres ver el spec, los criterios o el plan completos.</li><li>Elige una opción:</li></ol>
+        ${area('Tu comentario (opcional al aprobar; obligatorio si pides cambios)','Ej.: Agrega un criterio para el modo de dificultad difícil. / Cambia el nombre del módulo.')}
+        <div class="acts">
+          <button class="act go" data-act="approve" type="button"><span class="ic">✔</span><b>Aprobar y continuar</b><small>Estoy de acuerdo. La IA fija lo aprobado en un commit y pasa a la siguiente etapa.</small></button>
+          <button class="act chg" data-act="changes" type="button"><span class="ic">✎</span><b>Pedir cambios</b><small>No está mal, pero quiero ajustes. La IA los aplica, actualiza spec, criterios y plan, y te vuelve a preguntar.</small></button>
+          <button class="act rej" data-act="reject" type="button"><span class="ic">✖</span><b>Rechazar y rehacer</b><small>No es lo que quiero. La IA descarta la propuesta y la rehace según tu motivo.</small></button>
+        </div>
+        <p class="empty" style="margin-top:8px">También puedes <b>editar tú mismo</b> el spec, los criterios o el plan en la sección ③ antes de decidir; la IA leerá tus cambios.</p>`;
+    } else if(L.status==='waiting-input'){
+      cls+=' turn';
+      h = `<h3>💬 La IA espera tu respuesta</h3><p>Terminó su turno sin pedir una aprobación concreta. Respóndele, corrígela o dile cómo seguir.</p>
+        ${area('Tu mensaje','Ej.: Continúa con la exploración. / Usa el comando bash .claude/skills/_shared/scripts/sdd-estado.sh')}
+        <div class="acts"><button class="act go" data-act="send" type="button"><span class="ic">➤</span><b>Enviar a la IA</b><small>Continúa la misma conversación.</small></button></div>`;
+    } else if(L.status==='running'){
+      cls+=' work';
+      h = `<h3>⏳ La IA está trabajando</h3><p>No hay nada que decidir ahora. Cuando llegue a un punto de control, este panel se pondrá amarillo y se abrirá solo.</p><p class="empty" id="runNote"></p>
+        <div class="acts"><button class="act rej" data-act="stop" type="button"><span class="ic">■</span><b>Detener</b><small>Corta la ejecución. No deshace lo que ya quedó guardado en git.</small></button></div>`;
+    } else if(L.status==='done'){
+      cls+=' ok';
+      h = `<h3>✅ Terminó</h3><p>${esc(L.summary||'La IA indicó que ya no tiene más pasos.')}</p>
+        ${area('¿Quieres algo más? Pídeselo','Ej.: Agrega pruebas para el modo difícil.')}
+        <div class="acts"><button class="act chg" data-act="send" type="button"><span class="ic">➤</span><b>Enviar pedido</b><small>La IA lo hace y actualiza spec, criterios y plan.</small></button></div>`;
+    } else if(L.status==='error'){
+      cls+=' bad';
+      h = `<h3>⚠ Error</h3><p>${esc(L.errMsg||'')}</p><p class="empty">Corrige la configuración (clave, endpoint, repo) y vuelve a pulsar ▶ Iniciar migración.</p>`;
+    } else {
+      h = `<h3>Nada que decidir todavía</h3><p>Cuando la IA llegue a un <b>gate</b> (un punto de control), aquí aparecerán los botones para <b>aprobar</b>, <b>pedir cambios</b> o <b>rechazar</b>.</p>`;
+    }
+    d.className = cls; d.innerHTML = h;
+    const ta = $('#dcomment'); if(ta) ta.addEventListener('input',()=>{ L.draft = ta.value; });
+  }
+  function renderAll(){
+    $('#sdot').className = 'dot '+L.status; $('#stext').textContent = STATUS_TXT[L.status]||L.status;
+    const wait = L.status==='waiting-gate'||L.status==='waiting-input';
+    $('#btnStart').disabled = !L.repo || L.status==='running' || wait;
+    $('#btnStop').disabled = !(L.status==='running'||wait);
+    $('#btnRepo').disabled = L.status==='running'; $('#btnPrepare').disabled = L.status==='running';
+    renderSteps(); renderGuide(); renderDecision();
+    if(L.status==='waiting-gate'){
+      const key = (L.gate&&L.gate.name)+'|'+feed.children.length;
+      const asks = feed.querySelectorAll('.fe.text'); feed.querySelectorAll('.fe.ask').forEach(e=>e.classList.remove('ask'));
+      if(asks.length){ const last=asks[asks.length-1]; last.classList.add('ask'); last.scrollIntoView({block:'nearest'}); }
+      if(key!==L.lastGateKey){ L.lastGateKey=key; setTimeout(()=>$('#decision').scrollIntoView({behavior:'smooth',block:'center'}),150); }
+    } else feed.querySelectorAll('.fe.ask').forEach(e=>e.classList.remove('ask'));
+  }
+
+  /* ---------------- decisiones ---------------- */
+  const err = e => add(node('note err',esc('⚠ '+e.message)));
+  $('#decision').addEventListener('click',async e=>{
+    const b = e.target.closest('[data-act]'); if(!b) return;
+    const act = b.dataset.act; const ta = $('#dcomment'); const text = ta?ta.value.trim():'';
+    try{
+      if(act==='stop') return await post('/api/stop');
+      if(act==='changes' && !text){ ta.focus(); ta.placeholder='Escribe aquí qué cambios quieres y vuelve a pulsar el botón'; ta.style.borderColor='var(--red)'; return; }
+      if(act==='send' && !text){ ta.focus(); return; }
+      await post('/api/decide',{decision: act==='send'?'message':act, comment:text});
+      L.draft='';
+    }catch(ex){ err(ex); }
+  });
+  $('#goal').addEventListener('input',renderGuide);
+
+  /* ---------------- feed de la IA ---------------- */
+  function add(el){
+    const stick = feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 60;
+    if(feed.querySelector('.empty')) feed.innerHTML='';
+    feed.appendChild(el); if(stick) feed.scrollTop = feed.scrollHeight;
+  }
+  function node(cls, html, t){
+    const d = document.createElement('div'); d.className='fe '+cls;
+    d.innerHTML = html + (t?`<span class="ts">${hhmm(t)}</span>`:''); return d;
+  }
+  const TOOL_LABEL = {Skill:'Carga una skill (instrucciones del método)',Bash:'Ejecuta un comando',read_file:'Lee un archivo',write_file:'Escribe un archivo',list_files:'Lista archivos',grep:'Busca en el código'};
+  function onAgent(d,t){
+    if(d.kind==='note') return add(node('note',esc(d.text),t));
+    if(d.kind==='init') return add(node('note',`La IA se conectó · modelo ${esc(d.model||'?')} · ${d.tools} herramientas`,t));
+    if(d.kind==='text'){
+      const lines = d.text.trim().split('\n');
+      const isCtl = l=>/^(GATE|FIN)\|/.test(l.trim());
+      const ctl = lines.filter(isCtl); const body = lines.filter(l=>!isCtl(l)).join('\n').trim();
+      const pill = ctl.length ? `<div style="margin-top:6px"><span class="pill y">${/^GATE/.test(ctl[0])?'🚦 pide tu aprobación: '+esc(ctl[0].split('|')[1]||''):'✔ fin'}</span></div>` : '';
+      return add(node('text', esc(body)+pill, t));
+    }
+    if(d.kind==='tool'){
+      const isSkill = d.name==='Skill';
+      const el = node('tool '+(isSkill?'skill':''),
+        `<span>${isSkill?'🧩':'🔧'}</span><span class="tn" title="${esc(TOOL_LABEL[d.name]||'')}">${esc(TOOL_LABEL[d.name]||d.name)}</span><code style="word-break:break-all">${esc(d.summary)}</code><span class="tick" data-t0="${t||Date.now()}" title="Tiempo que lleva ejecutándose este comando"></span>`,t);
+      L.toolEls.set(d.id, el); return add(el);
+    }
+    if(d.kind==='tool_result'){
+      const el = L.toolEls.get(d.id); if(el){ const tk=el.querySelector('.tick'); if(tk) tk.remove(); }
+      if(!el || !d.output) return;
+      const det = document.createElement('details');
+      det.innerHTML = `<summary>${d.isError?'⚠ falló, ver motivo':'ver salida'}</summary><pre></pre>`;
+      det.querySelector('pre').textContent = d.output;
+      if(d.isError){ el.classList.add('err'); det.open = true; det.querySelector('pre').classList.add('errout'); }
+      el.appendChild(det); return;
+    }
+    if(d.kind==='result') return add(node('note',`La IA terminó su turno · ${d.turns??'?'} pasos${d.ms?' · '+Math.round(d.ms/1000)+' s':''}${d.cost?` · $${Number(d.cost).toFixed(3)}`:''}${d.tokens?` · ${d.tokens} tokens`:''}`,t));
+  }
+
+  /* ---------------- archivos para revisar y editar ---------------- */
+  const KIND = {nuevo:['nuevo','g'],modificado:['modificado','y'],doc:['documento',''],borrado:['borrado','']};
+  const describeFile = p => /^docs\/specs\//.test(p)?'Spec: lo que debe hacer el sistema'
+    : /^docs\/plan-/.test(p)?'Plan: fases, tareas y criterios CA-NN'
+    : /^docs\/adr\//.test(p)?'Decisión de arquitectura (ADR)'
+    : /^docs\/arquitectura/.test(p)?'Arquitectura y convenciones'
+    : /\.(test|spec)\./.test(p)?'Prueba automática' : /\.md$/i.test(p)?'Documento' : 'Código';
+  async function loadFiles(){
+    if(!L.repo) return;
+    try{
+      const { files } = await getJ('/api/docs');
+      $('#filesBox').innerHTML = files.length
+        ? `<div class="files">${files.map(f=>`<div class="fl"><div><span class="p">${esc(f.path)}</span><small>${esc(describeFile(f.path))}</small></div><div style="display:flex;gap:6px;align-items:center"><span class="pill ${KIND[f.kind][1]}">${KIND[f.kind][0]}</span>${f.exists?`<button class="btn" type="button" data-file="${esc(f.path)}" data-kind="${esc(f.kind)}">Abrir</button>`:''}</div></div>`).join('')}</div>`
+        : '<div class="empty">Todavía no hay archivos para revisar.</div>';
+    }catch(e){ /* sin repo o sin docs */ }
+  }
+  const fd = $('#fileDlg'); let fdPath='';
+  const showTab = diff=>{ $('#fdDiff').hidden=!diff; $('#fdText').hidden=diff; $('#fdTabDiff').classList.toggle('on',diff); $('#fdTabEdit').classList.toggle('on',!diff); };
+  $('#fdTabDiff').onclick=()=>showTab(true); $('#fdTabEdit').onclick=()=>showTab(false);
+  $('#fdClose').onclick=()=>fd.close();
+  $('#filesBox').addEventListener('click',async e=>{
+    const b = e.target.closest('[data-file]'); if(!b) return;
+    try{
+      const j = await getJ('/api/file?path='+encodeURIComponent(b.dataset.file)); fdPath = j.path;
+      $('#fdTitle').textContent = j.path; $('#fdKind').textContent = describeFile(j.path);
+      $('#fdHelp').textContent = 'Puedes leerlo, ver qué cambió la IA y corregirlo tú mismo.';
+      $('#fdText').value = j.content; $('#fdMsg').textContent='';
+      $('#fdDiff').innerHTML = j.diff ? j.diff.split('\n').map(l=>`<span class="${/^\+(?!\+\+)/.test(l)?'a':/^-(?!--)/.test(l)?'d':l.startsWith('@@')?'h':''}">${esc(l)}</span>`).join('\n') : 'Sin diferencias respecto a la última versión guardada en git (o el archivo es nuevo: míralo en «Contenido»).';
+      showTab(false); fd.showModal();
+    }catch(ex){ err(ex); }
+  });
+  $('#fdSave').onclick=async()=>{
+    try{ await post('/api/file',{path:fdPath,content:$('#fdText').value}); $('#fdMsg').textContent='✔ Guardado. Cuando decidas (aprobar / pedir cambios), la IA leerá tu edición y actualizará spec, criterios y plan.'; loadFiles(); }
+    catch(ex){ $('#fdMsg').textContent='⚠ '+ex.message; }
+  };
+
+  /* ---------------- estado del repo ---------------- */
+  function renderRepo(st){
+    const el = $('#repoState');
+    if(!st || !st.repo){ el.innerHTML='<div class="empty">Conecta un repositorio.</div>'; return; }
+    $('#btnSkills').hidden = !!st.hasSkills;
+    $('#repoInfo').innerHTML = `Conectado: <code>${esc(st.repo)}</code> · rama <b>${esc(st.current)}</b>${st.dirty?` · ${st.dirty} cambios sin commitear`:''}${st.hasSkills?'':' · <b>faltan las skills SDD: usa el botón de arriba</b>'}`;
+    const plans = st.plans.map(p=>{
+      const pct = p.caTotal? Math.round(p.caOk/p.caTotal*100):0, tp = p.tasksTotal? Math.round(p.tasksDone/p.tasksTotal*100):0;
+      return `<div class="box" style="margin-bottom:8px"><h4>Plan · ${esc(p.estado||'?')}${p.caso?' · Caso '+esc(p.caso):''}</h4><div class="mono">${esc(p.file)}</div>
+        <div style="font-size:13px;margin-top:4px">Tareas hechas ${p.tasksDone}/${p.tasksTotal}</div><div class="bar"><i style="width:${tp}%"></i></div>
+        <div style="font-size:13px">Criterios verificados ${p.caOk}/${p.caTotal}</div><div class="bar"><i style="width:${pct}%"></i></div></div>`;}).join('');
+    const specs = st.specs.length? `<div class="box" style="margin-bottom:8px"><h4>Specs</h4><ul>${st.specs.map(s=>`<li>${esc(s.file)} <span class="pill ${s.estado==='desplegado'?'g':'y'}">${esc(s.estado||'?')}</span></li>`).join('')}</ul></div>`:'';
+    const br = `<div class="box" style="margin-bottom:8px"><h4>Ramas (${st.branches.length})</h4><div style="display:flex;gap:4px;flex-wrap:wrap">${st.branches.map(b=>`<span class="pill ${b===st.current?'':'k'}">${esc(b)}</span>`).join('')}</div></div>`;
+    const cms = st.commits.slice(0,30).map(c=>{
+      const tr = Object.entries(c.trailers).map(([k,v])=>`<span class="tag ${k==='SDD-Fase'?'med':''}">${esc(k.replace('SDD-',''))}: ${esc(v.length>40?v.slice(0,40)+'…':v)}</span>`).join('');
+      return `<div class="cm"><span class="h">${esc(c.hash)}</span> ${esc(c.date)} ${c.isMerge?'<span class="pill g">merge</span>':''}<div>${esc(c.subject)}</div>${tr?`<div class="tr">${tr}</div>`:''}</div>`;}).join('');
+    el.innerHTML = plans+specs+br+`<div class="box"><h4>Commits recientes (cada commit es un paso guardado)</h4>${cms||'<div class="empty">Aún no hay commits.</div>'}</div>`;
+  }
+
+  /* ---------------- eventos del servidor ---------------- */
+  const APPR = {approve:'✔ Aprobaste',reject:'✖ Rechazaste',changes:'✎ Pediste cambios',message:'💬 Escribiste',edit:'📝 Editaste el archivo'};
+  function handle(ev){
+    const {type,data,t} = ev;
+    if(type==='agent') onAgent(data,t);
+    else if(type==='status'){
+      L.status=data.status; L.gate=data.gate; if(data.phase){L.phase=data.phase;L.seen.add(data.phase);}
+      if(data.message){ L.errMsg=data.message; add(node('note'+(data.status==='error'?' err':''),esc(data.message),t)); }
+      if(data.summary){ L.summary=data.summary; add(node('note',esc('Resumen: '+data.summary),t)); }
+      renderAll();
+    }
+    else if(type==='state'){ renderRepo(data); clearTimeout(L.ft); L.ft=setTimeout(loadFiles,400); }
+    else if(type==='approval') add(node('appr',`<b>${APPR[data.decision]||'Respuesta'}</b>${data.decision==='edit'?` <code>${esc(data.comment)}</code>`:` · ${esc(data.gate)}${data.comment?`<br>${esc(data.comment)}`:''}`}`,t));
+    else if(type==='reset'){
+      feed.innerHTML='<div class="empty">Repositorio conectado. Escribe el objetivo (paso 2) y pulsa ▶ Iniciar migración.</div>';
+      L.phase=null; L.seen.clear(); L.toolEls.clear(); L.gate=null; L.status='idle'; L.repo=data.repo; L.draft=''; L.summary=''; L.errMsg=''; renderAll(); loadFiles();
+    }
+  }
+  function connect(){
+    const es = new EventSource('/api/events');
+    es.addEventListener('hello',e=>{
+      const d = JSON.parse(e.data).data; L.status=d.status; L.gate=d.gate; L.phase=d.phase; L.repo=d.repo;
+      feed.innerHTML=''; L.toolEls.clear(); L.seen.clear(); if(d.phase) L.seen.add(d.phase);
+      if(!d.history.length) feed.innerHTML='<div class="empty">Aquí aparecerán, en orden: las skills que carga la IA, los archivos que lee, los comandos que ejecuta y sus mensajes.</div>';
+      d.history.forEach(handle); if(d.repo) $('#repoPath').value=d.repo; renderAll(); loadFiles();
+    });
+    ['agent','status','state','approval','reset'].forEach(n=>es.addEventListener(n,e=>handle(JSON.parse(e.data))));
+    es.onerror = ()=>{ $('#offline').hidden=false; }; es.onopen = ()=>{ $('#offline').hidden=true; };
+  }
+
+  /* ---------------- repo: copia / existente / explorador ---------------- */
+  function setTab(copy){
+    $('#paneCopy').hidden=!copy; $('#paneExisting').hidden=copy;
+    $('#tabCopy').classList.toggle('on',copy); $('#tabExisting').classList.toggle('on',!copy);
+    $('#tabCopy').setAttribute('aria-checked',copy); $('#tabExisting').setAttribute('aria-checked',!copy); lsSet('viz_tab',copy?'copy':'existing');
+  }
+  $('#tabCopy').onclick=()=>setTab(true); $('#tabExisting').onclick=()=>setTab(false);
+  ['srcPath','dstParent','dstName','repoPath'].forEach(id=>{const v=lsGet('viz_'+id); if(v) $('#'+id).value=v; $('#'+id).addEventListener('change',()=>lsSet('viz_'+id,$('#'+id).value));});
+  setTab(lsGet('viz_tab')!=='existing');
+  $('#srcPath').addEventListener('input',()=>{ if($('#dstName').value && $('#dstName').dataset.auto!=='1') return;
+    const base=$('#srcPath').value.trim().replace(/[\\/]+$/,'').replace(/\.git$/,'').split(/[\\/:]/).pop()||''; const nm=base.replace(/[^\w .-]/g,'');
+    $('#dstName').value = nm?nm+'-migrado':''; $('#dstName').dataset.auto='1'; });
+  $('#dstName').addEventListener('input',()=>{ $('#dstName').dataset.auto='0'; });
+
+  const dlg = $('#picker'); let pkTarget=null, pkCur='';
+  async function pkLoad(p){
+    try{
+      const d = await getJ('/api/fs?path='+encodeURIComponent(p||''));
+      pkCur = d.path||''; $('#pkPath').textContent = pkCur || 'Este equipo';
+      const items=[];
+      if(!d.path){ (d.drives||[]).forEach(x=>items.push({n:x,p:x,git:false})); if(d.home) items.unshift({n:'📁 Mi carpeta de usuario ('+d.home+')',p:d.home,git:false}); }
+      else { items.push({n:'⬆ Subir',p:d.parent||'',git:false}); if(d.error) items.push({n:d.error,p:null}); (d.dirs||[]).forEach(x=>items.push({n:x.name,p:d.path.replace(/[\\/]+$/,'')+(d.path.includes('\\')?'\\':'/')+x.name,git:x.isGit})); }
+      $('#pkList').innerHTML = items.map((it,i)=>`<button type="button" class="btn" data-i="${i}" ${it.p===null?'disabled':''} style="display:flex;width:100%;justify-content:space-between;text-align:left;border-radius:10px;margin:3px 0;border-width:1px">${esc(it.n)}${it.git?'<span class="pill g">git</span>':''}</button>`).join('');
+      $('#pkList').onclick = e=>{ const b=e.target.closest('button[data-i]'); if(b) pkLoad(items[+b.dataset.i].p); };
+      $('#pkOk').disabled = !pkCur;
+    }catch(e){ $('#pkList').innerHTML = `<div class="empty">⚠ ${esc(e.message)}</div>`; }
+  }
+  document.addEventListener('click',e=>{ const b=e.target.closest('[data-browse]'); if(!b) return;
+    pkTarget=b.dataset.browse; const cur=$('#'+pkTarget).value.trim(); dlg.showModal(); pkLoad(/^([a-zA-Z]:[\\/]|\/)/.test(cur)?cur:''); });
+  $('#pkCancel').onclick=()=>dlg.close();
+  $('#pkOk').onclick=()=>{ $('#'+pkTarget).value=pkCur; $('#'+pkTarget).dispatchEvent(new Event('change')); if(pkTarget==='srcPath') $('#srcPath').dispatchEvent(new Event('input')); dlg.close(); };
+  $('#pkNew').onclick=async()=>{ if(!pkCur) return; const name=prompt('Nombre de la carpeta nueva:'); if(!name) return;
+    try{ await post('/api/mkdir',{parent:pkCur,name}); pkLoad(pkCur); }catch(e){ $('#pkList').insertAdjacentHTML('afterbegin',`<div class="empty">⚠ ${esc(e.message)}</div>`); } };
+  $('#btnPrepare').onclick=async()=>{
+    const b=$('#btnPrepare'); b.disabled=true; b.textContent='Preparando…';
+    try{ await post('/api/prepare',{source:$('#srcPath').value,destParent:$('#dstParent').value,destName:$('#dstName').value}); }
+    catch(e){ $('#repoInfo').textContent='⚠ '+e.message; }
+    b.disabled=false; b.textContent='Preparar copia y conectar';
+  };
+
+  /* ---------------- proveedor de IA ---------------- */
+  const oai = ()=>({baseUrl:$('#oaiUrl').value.trim(),model:$('#oaiModel').value.trim(),apiKey:$('#oaiKey').value});
+  ['oaiUrl','oaiModel','claudeModel'].forEach(id=>{const v=lsGet('viz_'+id); if(v) $('#'+id).value=v; $('#'+id).addEventListener('change',()=>{lsSet('viz_'+id,$('#'+id).value); renderActive();});});
+  const activeProv = ()=>{ const r=document.querySelector('input[name=prov]:checked'); return r?r.value:'claude'; };
+  function renderActive(){
+    const p = activeProv();
+    $('#provClaude').classList.toggle('active',p==='claude'); $('#provOai').classList.toggle('active',p==='openai');
+    $('#activeLine').innerHTML = p==='claude'
+      ? 'IA activa: <b>Claude Code</b> con tu sesión'+($('#claudeModel').value?' · modelo <b>'+esc($('#claudeModel').value)+'</b>':'')+'.'
+      : 'IA activa: <b>'+esc($('#oaiModel').value||'?')+'</b> en <code>'+esc($('#oaiUrl').value)+'</code>.';
+  }
+  const savedProv = lsGet('viz_prov')==='openai' ? 'openai' : 'claude';
+  document.querySelector('input[name=prov][value='+savedProv+']').checked = true;
+  document.querySelectorAll('input[name=prov]').forEach(r=>r.addEventListener('change',()=>{ lsSet('viz_prov',activeProv()); renderActive(); }));
+  renderActive();
+  async function checkClaude(){
+    const b=$('#claudeBadge'), m=$('#claudeMsg'); b.className='pill'; b.textContent='comprobando…';
+    try{
+      const s = await getJ('/api/claude-status');
+      if(!s.installed){ b.className='pill y'; b.textContent='no instalado'; m.textContent='⚠ No encuentro el comando "claude" en esta máquina.'; }
+      else if(!s.loggedIn){ b.className='pill y'; b.textContent='sin sesión'; m.textContent='⚠ Ejecuta en una terminal: claude auth login'; }
+      else { b.className='pill g'; b.textContent='sesión activa'; m.textContent='✔ Sesión iniciada'+(s.authMethod?' ('+s.authMethod+')':'')+(s.plan?' · plan '+s.plan:''); }
+    }catch(e){
+      b.className='pill y';
+      if(/no encontrado/i.test(e.message)){ b.textContent='servidor viejo'; m.textContent='⚠ El servidor en marcha es una versión anterior: ciérralo y vuelve a abrir iniciar.cmd.'; $('#stale').hidden=false; }
+      else { b.textContent='sin servidor'; m.textContent='⚠ '+e.message; }
+    }
+  }
+  $('#btnClaudeCheck').onclick = checkClaude;
+  $('#btnTest').onclick = async ()=>{
+    const m=$('#oaiMsg'); m.textContent='Probando…';
+    try{ const r=await post('/api/test-provider',{openai:oai()}); m.textContent=`✔ Conectado · modelo ${r.model}${r.tokens?` · ${r.tokens} tokens`:''}`; }
+    catch(e){ m.textContent='⚠ '+e.message; }
+  };
+
+  /* ---------------- botones principales ---------------- */
+  $('#btnRepo').onclick = ()=>post('/api/repo',{path:$('#repoPath').value.trim()}).catch(e=>{ $('#repoInfo').textContent='⚠ '+e.message; });
+  $('#btnSkills').onclick = ()=>post('/api/install-skills').catch(err);
+  $('#btnStart').onclick = ()=>post('/api/start',{goal:$('#goal').value,mode:$('#mode').value,provider:activeProv(),openai:oai(),claude:{model:$('#claudeModel').value}}).then(()=>{$('#oaiKey').value='';}).catch(e=>{ L.errMsg=e.message; err(e); });
+  $('#btnStop').onclick = ()=>post('/api/stop').catch(err);
+
+  renderAll();
+  if(location.protocol==='http:'){
+    fetch('/api/ping').then(r=>r.ok?r.json():Promise.reject()).then(p=>{
+      if((p.version||0) < EXPECTED_SERVER){ $('#stale').hidden=false; }
+      if(p.openai){ if(p.openai.envKey) $('#oaiKey').placeholder='usando OPENAI_API_KEY del entorno'; if(p.openai.baseUrl && !lsGet('viz_oaiUrl')) $('#oaiUrl').value=p.openai.baseUrl; if(p.openai.model && !lsGet('viz_oaiModel')) $('#oaiModel').value=p.openai.model; }
+      connect(); checkClaude(); renderActive();
+    }).catch(()=>{ $('#offline').hidden=false; });
+  } else { $('#offline').hidden=false; }
+})();
+
+renderCycle(); renderRail(); renderDetail(); renderCA();
+</script>
+</body>
+</html>

@@ -1,3 +1,0 @@
-REM -- compile Reversi2.java as a JDK1.1 applet in a JAR file
-"E:\Program Files\Java\j2sdk1.4.2_19\bin\javac.exe" -target 1.1 Reversi2.java
-"E:\Program Files\Java\j2sdk1.4.2_19\bin\jar.exe" -cfmv REVERS2B.JAR Reversi2.manifest Reversi2*.class
