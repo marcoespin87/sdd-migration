@@ -38,6 +38,7 @@ const ES_APROBADO = {
     language: 'Idioma',
     langEn: 'English',
     langEs: 'Español',
+    title: 'Reversi u Othello',
   },
   credits: 'Reversi u Othello.  Copyright (c) 2004 de Keith Fenske.  Licencia Pública GNU.',
   begin: 'Haz clic en la casilla que elijas.  Tú juegas con las fichas oscuras.',
@@ -99,6 +100,7 @@ describe('catálogos', () => {
       expect(catalog['ui.level']).toBeTruthy();
       expect(catalog['ui.langEn']).toBeTruthy();
       expect(catalog['ui.langEs']).toBeTruthy();
+      expect(catalog['ui.title']).toBeTruthy();
     }
   });
 

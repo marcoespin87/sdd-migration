@@ -109,12 +109,21 @@ describe('App', () => {
     expect(texts).toContain('[[ui.level]]');
     expect(texts).toContain('[[ui.langEn]]'); // el selector de idioma también sale del catálogo
     expect(texts).toContain('[[ui.langEs]]');
+    expect(texts).toContain('[[ui.language]]'); // aria-label del selector de idioma
+    expect(document.title).toBe('[[ui.title]]'); // el título de la pestaña también sale del catálogo
+
+    // otro estado de mensaje: el aviso de ventana también sale del catálogo
+    await resize(100, 100);
+    const warning = visibleTexts(root);
+    expect(warning).toContain('[[tooShort]]');
+    expect(warning.filter((t) => !/^(\d+|\[\[[\w.]+\]\])$/.test(t))).toEqual([]);
   });
 
   it('CA-31 la aplicación abre en inglés y el atributo lang del documento lo refleja', async () => {
     const { line } = await render();
     expect(line()).toBe(CREDITS);
     expect(document.documentElement.lang).toBe('en');
+    expect(document.title).toBe('Reversi or Othello');
   });
 
   it('CA-31 cambiar de idioma traduce al instante el último mensaje sin alterar la partida en curso', async () => {
@@ -131,6 +140,7 @@ describe('App', () => {
     await settle(fixture);
     expect(line()).toBe('Tu jugada es la fila 3 y la columna 4, con una ficha volteada.');
     expect(document.documentElement.lang).toBe('es');
+    expect(document.title).toBe('Reversi u Othello'); // el título de la pestaña también se traduce
     // la partida sigue exactamente igual
     expect(game.board()).toBe(board);
     expect(game.turn()).toBe('computer');
@@ -149,6 +159,7 @@ describe('App', () => {
     await settle(fixture);
     expect(line().startsWith("Computer's move is row")).toBe(true);
     expect(document.documentElement.lang).toBe('en');
+    expect(document.title).toBe('Reversi or Othello');
   });
 
   it('CA-24 la pantalla tiene el fondo rosa del juego', async () => {
