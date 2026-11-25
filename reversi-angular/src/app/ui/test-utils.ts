@@ -49,6 +49,7 @@ export function configureUi(
         translocoConfig: {
           availableLangs: Object.keys(langs),
           defaultLang: options.defaultLang ?? 'en',
+          reRenderOnLangChange: true, // igual que la configuracion de la aplicacion
         },
         preloadLangs: true,
       }),
