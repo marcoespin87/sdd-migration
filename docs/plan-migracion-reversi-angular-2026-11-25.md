@@ -10,8 +10,10 @@
 ## Delta
 NULO sobre lo que el spec promete. El legacy incumple A, B y C; el port los cumple por diseño. Las únicas adiciones al texto del spec son dos omisiones del baseline (mensaje inicial de créditos y mensaje de nuevo tamaño), que ya eran comportamiento del legacy. En la Fase 3 hay un ajuste menor decidido por el usuario: el aviso de ventana angosta o baja ya no deja la línea vacía al desaparecer, sino que vuelve el último mensaje del juego (escrito en el spec).
 
+En la Fase 4 se precisa el comportamiento del selector de idioma (siempre abre en inglés, nombres en su propia lengua, traducción al instante sin alterar la partida), decidido por el usuario y escrito en el spec.
+
 ## Delta del spec escrito
-`spec-partida-reversi.md`: tres entradas en *Decisiones* (migración a Angular, omisiones del baseline y ajuste de dos textos) y *Referencias* nuevas (código, tests, catálogos i18n y ADR). En *Flujo / Inicio de partida* se agregaron tres ítems que el baseline omitió (mensaje inicial, mensaje de *New Game*, mensaje de nuevo tamaño). En la Fase 3 se reescribió el primer ítem de *Modos de falla* (aviso de ventana) y se agregó una entrada en *Decisiones*. El resto de *Comportamiento* e *Invariantes* no se tocó.
+`spec-partida-reversi.md`: tres entradas en *Decisiones* (migración a Angular, omisiones del baseline y ajuste de dos textos) y *Referencias* nuevas (código, tests, catálogos i18n y ADR). En *Flujo / Inicio de partida* se agregaron tres ítems que el baseline omitió (mensaje inicial, mensaje de *New Game*, mensaje de nuevo tamaño). En la Fase 3 se reescribió el primer ítem de *Modos de falla* (aviso de ventana) y se agregó una entrada en *Decisiones*. En la Fase 4 se agregó un párrafo de *Contrato* (cambio de idioma) y una entrada en *Decisiones*. El resto de *Comportamiento* e *Invariantes* no se tocó.
 
 ## Decisiones tomadas y enfoque técnico
 - **Estrategia:** el sistema tiene una sola capacidad, así que la migración va **por fases dentro de ella**, de lo más aislado (lógica pura) a lo más expuesto (interfaz). Cada fase es su propio cambio acotado, con su rama, su ciclo y su merge a `develop`. Un solo plan padre.
@@ -91,13 +93,26 @@ Decisiones técnicas de la F3 para aprobar en su gate. Lo que cambia respecto de
 - **CA-28 manual.** Se arranca `ng serve` y se juegan las dos partidas; puedo ayudar con capturas del navegador, pero el resultado lo confirma el usuario.
 - **Fuera de esta fase:** selector de idioma, `es.json`, plurales en español, atribución en cada archivo (CA-33) y el recuento final de textos (CA-30).
 
+### Diseño de la Fase 4 (i18n y cierre)
+Decisiones técnicas de la F4 para aprobar en su gate. Lo observable del idioma está en el spec (ver *Contrato* y *Decisiones*).
+
+- **Catálogo en español.** `public/i18n/es.json` con **exactamente las mismas claves** que `en.json` y los textos de la tabla "Catálogo de textos" de este plan, más tres claves nuevas que van en los dos catálogos: `ui.level` ("Difficulty" / "Dificultad", para el `aria-label` del selector de dificultad) y `ui.langEn` y `ui.langEs`, con el mismo valor en ambos idiomas ("English" y "Español"), porque cada idioma se nombra en su propia lengua.
+- **Selector de idioma.** Un `<select id="lang">` en `ControlsComponent`, con las opciones `en` y `es` y la activa seleccionada; al cambiar llama a `TranslocoService.setActiveLang`. `availableLangs` pasa a `['en', 'es']` y `defaultLang` sigue en `'en'`: no se detecta el idioma del navegador ni se recuerda la elección. Cambiar de idioma no toca `GameService`, por lo que la partida no se altera.
+- **Plural.** La regla ya vive en `message-text.ts` (`.one` solo con `count === 1`, `.other` en cualquier otro caso) y es la misma para los dos idiomas: "una ficha volteada" / "N fichas volteadas".
+- **Documento accesible.** El atributo `lang` de `<html>` acompaña al idioma activo (lo actualiza `App`). No es visible y no cambia el comportamiento del juego.
+- **Prueba de "no hay texto literal" (CA-30).** Se renderiza la pantalla con un idioma sintético cuyo catálogo devuelve `[[clave]]` para cada texto: todo texto visible y todo atributo con texto (`aria-label`, `title`, `alt`) debe ser un número o tener la forma `[[…]]`. Cualquier literal en una plantilla rompe la prueba.
+- **Atribución (CA-33), precisada.** Un archivo JSON no admite comentarios, así que el criterio se acota a todos los `.ts`, `.html` y `.css` de `reversi-angular/src/` (hoy faltan en `main.ts`, `index.html`, `styles.css`, `app.component.html` y `app.component.css`); los JSON de configuración (`package.json`, `angular.json`, `tsconfig*.json`, `.vscode/`) quedan cubiertos por `LICENSE` (GPLv3 completo) y por el README, que nombra a Keith Fenske.
+- **README del port.** Se documenta, sin construir comportamiento nuevo: cómo ejecutar y probar con Node 22.12+/24/26, que `TranslocoHttpLoader` pide `i18n/<idioma>.json` relativo a `<base href>` (en un subdirectorio se construye con `--base-href`), que sin catálogo la pantalla mostraría las claves (decisión del usuario: solo documentarlo) y que `100vh` puede recortar el tablero en móviles.
+- **Cierre (CA-34), en la verificación.** Spec a `desplegado` con `Última revisión` actualizada y plan a `destilado`, solo si CA-16, CA-19, CA-20 y CA-29 pasaron (ya pasaron en F2 y F3). Además se corren `npm audit` y se revisan las licencias transitivas, que quedaron pendientes desde la F1 (requieren red).
+- **Fuera de esta fase:** retirar el legacy (`reversi-game-java-main/`), elegir hosting y despliegue (`docs/arquitectura.md` pide un `/sdd-arquitectura`), recordar el idioma, detectar el del navegador y un aviso de error del catálogo. Cada uno sería un cambio aparte.
+
 ## Mapa de ramas
 | Fase | Rama | Depende de | Spec(s) | Estado |
 |---|---|---|---|---|
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
 | F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | mergeada a `develop` |
-| F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | verificada; pendiente de merge |
-| F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | pendiente |
+| F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | mergeada a `develop` |
+| F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | en curso (propuesta) |
 
 Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualizado con la anterior.
 
@@ -125,9 +140,12 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - [ ] Partida completa en el navegador (CA-28, manual; lo ejecuta el usuario).
 
 **F4 — i18n y cierre** (rama `migrate/partida-reversi-i18n`)
-- [ ] Catálogo en español, selector de idioma, plurales (cubre CA-30, CA-31, CA-32).
-- [ ] Atribución y licencia (CA-33), build y pruebas completas (CA-35), legacy intacto (CA-36).
-- [ ] Cierre: spec a `desplegado` y plan a `destilado` (CA-34).
+- [ ] `public/i18n/es.json` y las tres claves nuevas en ambos catálogos (cubre CA-30, CA-32).
+- [ ] Selector de idioma en `ControlsComponent`, `availableLangs` con `en` y `es` y `lang` del documento (cubre CA-31).
+- [ ] Prueba de "no hay texto literal" con el idioma sintético (cubre CA-30).
+- [ ] Aviso de atribución en los `.ts`, `.html` y `.css` de `src/` que no lo tienen (cubre CA-33). Comentarios sin comportamiento: sin prueba previa.
+- [ ] README del port con ejecución, `--base-href`, catálogo y `100vh`. Documentación: sin prueba previa.
+- [ ] Verificación final y cierre: build y pruebas completas, legacy intacto, `npm audit`, spec a `desplegado` y plan a `destilado` (cubre CA-34, CA-35, CA-36).
 
 ## Criterios de aceptación
 **F1 — Dominio e IA**
@@ -166,10 +184,10 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - **CA-29** (fix A) Con la computadora parpadeando, los botones y selectores responden; *New Game* funciona y cancela la jugada. Verificación: automática (prueba de componente, reloj simulado) — `…/app.component.spec.ts::CA-29 interfaz responde`
 
 **F4 — i18n y cierre**
-- **CA-30** Los catálogos `en.json` y `es.json` tienen exactamente las mismas claves y contienen todos los textos del catálogo aprobado; no queda texto literal en las plantillas. Verificación: automática — `…/i18n/catalogos.spec.ts::CA-30 catálogos completos`
-- **CA-31** El selector de idioma cambia todos los textos al instante, sin recargar y sin perder la partida en curso; el idioma base es inglés. Verificación: automática (prueba de componente) — `…/app.component.spec.ts::CA-31 selector de idioma`
+- **CA-30** Los catálogos `en.json` y `es.json` tienen exactamente las mismas claves y contienen todos los textos del catálogo aprobado, más `ui.level`, `ui.langEn` y `ui.langEs`; y no queda texto literal en la pantalla: con un idioma sintético donde cada texto devuelve `[[clave]]`, todo texto visible y todo atributo con texto es un número o tiene la forma `[[…]]`. Verificación: automática — `…/i18n/catalogos.spec.ts::CA-30 catálogos completos` y `…/app.component.spec.ts::CA-30 sin texto literal`
+- **CA-31** El selector de idioma cambia todos los textos al instante, sin recargar y sin perder la partida en curso (tablero, turno, jugada pendiente y dificultad no cambian); la aplicación siempre abre en inglés; los idiomas se nombran en su propia lengua (English, Español) y el atributo `lang` del documento acompaña al idioma activo. Verificación: automática (prueba de componente) — `…/app.component.spec.ts::CA-31 selector de idioma`
 - **CA-32** Los mensajes con cantidad usan la forma singular con exactamente 1 volteo y la plural con cualquier otra cantidad, en ambos idiomas, y sustituyen fila, columna y cantidades. Verificación: automática — `…/i18n/catalogos.spec.ts::CA-32 plurales y parámetros`
-- **CA-33** El port incluye `LICENSE` (GPLv3) y un aviso con el copyright de Keith Fenske; ningún archivo del port omite la atribución en su encabezado de licencia. Verificación: medición — comando `grep -L "Keith Fenske" ...` sobre `reversi-angular/` (debe listar 0 archivos fuente sin aviso); manual para `LICENSE`.
+- **CA-33** El port incluye `LICENSE` (GPLv3) y un aviso con el copyright de Keith Fenske; todos los `.ts`, `.html` y `.css` de `reversi-angular/src/` llevan la atribución en su encabezado (los JSON de configuración no admiten comentarios y quedan cubiertos por `LICENSE` y el README, que nombra a Keith Fenske). Verificación: medición — comando `grep -rL "Keith Fenske" reversi-angular/src --include=*.ts --include=*.html --include=*.css` (debe listar 0 archivos) y `head -3 reversi-angular/LICENSE` (GPL versión 3); manual para el README.
 - **CA-34** El spec queda con `Estado: desplegado` y `Última revisión` actualizada, y el plan con `Estado: destilado`, solo si CA-16, CA-19, CA-20 y CA-29 pasaron. Verificación: manual — revisión del diff del spec en `/sdd-verificacion`.
 - **CA-35** `ng build` produce un build estático sin errores y `ng test` pasa completo. Verificación: automática — comandos `ng build` y `ng test` en `reversi-angular/`.
 - **CA-36** El legacy no cambia: `git diff develop -- reversi-game-java-main/` está vacío en cada fase. Verificación: medición — comando `git diff --stat <tronco>...HEAD -- reversi-game-java-main/`, sin salida.
