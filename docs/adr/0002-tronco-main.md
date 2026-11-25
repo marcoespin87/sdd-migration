@@ -1,6 +1,6 @@
 # ADR 0002: El tronco de integración se llama `main`
 
-**Estado:** propuesto · **Fecha:** 2026-11-25
+**Estado:** aceptado · **Fecha:** 2026-11-25
 
 ## Contexto
 Durante la migración de Reversi a Angular, el flujo de trabajo definió `develop` como tronco de integración (nacida de `master`, que quedaba como rama estable). Al terminar la migración, la persona dueña del repositorio renombró `develop` a `main`, con el mismo historial: el último commit de la migración (`4c5e5a7`) quedó en `main`.
