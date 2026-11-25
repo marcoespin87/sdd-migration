@@ -1,0 +1,16 @@
+:host {
+  display: block;
+  height: 100vh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.board-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}

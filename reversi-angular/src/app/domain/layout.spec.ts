@@ -17,7 +17,7 @@ describe('layout', () => {
       symbolSize: 58,
       leftMargin: 14,
       topMargin: 48,
-      cornerRadius: 43,
+      cornerArc: 43,
       tooNarrowColumns: null,
       tooShortRows: null,
     });
@@ -31,7 +31,7 @@ describe('layout', () => {
       symbolSize: 76,
       leftMargin: 60,
       topMargin: 10,
-      cornerRadius: 57,
+      cornerArc: 57,
       tooNarrowColumns: null,
       tooShortRows: null,
     });
@@ -45,7 +45,7 @@ describe('layout', () => {
       symbolSize: 125,
       leftMargin: 14,
       topMargin: 58,
-      cornerRadius: 95,
+      cornerArc: 95,
       tooNarrowColumns: null,
       tooShortRows: null,
     });

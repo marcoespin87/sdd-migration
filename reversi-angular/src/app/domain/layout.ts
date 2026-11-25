@@ -19,8 +19,11 @@ export interface BoardLayout {
   readonly symbolSize: number;
   readonly leftMargin: number;
   readonly topMargin: number;
-  /** Radio de las esquinas redondeadas de la ficha (65 % del paso). */
-  readonly cornerRadius: number;
+  /**
+   * Arco de las esquinas redondeadas de la ficha: su DIAMETRO es el 65 % del paso (el arcWidth de
+   * fillRoundRect del legacy), asi que el radio de las esquinas es la mitad de este valor.
+   */
+  readonly cornerArc: number;
   /** Columnas que no caben en el ancho disponible, o null si caben. */
   readonly tooNarrowColumns: number | null;
   /** Filas que no caben en el alto disponible, o null si caben. */
@@ -77,7 +80,7 @@ export function computeLayout(
     symbolSize,
     leftMargin: CANVAS_BORDER + horizontal,
     topMargin: CANVAS_BORDER + vertical,
-    cornerRadius: Math.trunc(step * 0.65),
+    cornerArc: Math.trunc(step * 0.65),
     tooNarrowColumns,
     tooShortRows,
   };

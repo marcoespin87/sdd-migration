@@ -1,1 +1,6 @@
-/* You can add global styles to this file, and also import other style files */
+/* Estilos globales: la pantalla ocupa toda la ventana, como el applet original. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+}

@@ -1,0 +1,37 @@
+{
+  "ui": {
+    "level": "Difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "rows": "Rows: ",
+    "columns": "Columns: ",
+    "newGame": "New Game",
+    "skipTurn": "Skip Turn",
+    "language": "Language"
+  },
+  "credits": "Reversi or Othello.  Copyright (c) 2004 by Keith Fenske.  GNU Public License.",
+  "begin": "Click the mouse on a position of your choice.  You are the dark pieces.",
+  "mustSkip": "You can't move, so please click the \"Skip Turn\" button.",
+  "skipNotYourTurn": "But it's the computer's turn to play!",
+  "skipNoGame": "You must start a new game before you can skip your turn.",
+  "gameFinished": "This game is finished.  You must start a new game before you can move again.",
+  "notYourTurn": "Sorry, it's not your turn to move.  The computer is thinking.",
+  "clickPosition": "Please click on a board position.",
+  "occupied": "Sorry, that board position has already been chosen.",
+  "invalidMove": "Choose an empty position that flips at least one computer position.",
+  "userMove": {
+    "one": "Your move is row {{row}} and column {{col}} with one reversed position.",
+    "other": "Your move is row {{row}} and column {{col}} with {{count}} reverses."
+  },
+  "computerMove": {
+    "one": "Computer's move is row {{row}} and column {{col}} with one reversed position.",
+    "other": "Computer's move is row {{row}} and column {{col}} with {{count}} reverses."
+  },
+  "newBoard": "New game board is {{rows}} rows by {{cols}} columns.",
+  "tooNarrow": "The window is too narrow to display {{cols}} columns.",
+  "tooShort": "The window is too short to display {{rows}} rows.",
+  "computerCantMove": "The computer can't move, so it's your turn again.",
+  "endComputerWins": "Nobody can move.  Computer wins, {{comp}} positions to your {{user}} positions.",
+  "endUserWins": "Nobody can move.  You win with {{user}} positions to the computer's {{comp}} positions.",
+  "endTie": "Nobody can move.  Game is tied.  We both have {{count}} positions."
+}
