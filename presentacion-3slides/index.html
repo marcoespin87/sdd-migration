@@ -242,7 +242,7 @@ button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
     <div class="lg"><span class="gate">GATE</span>la IA se detiene y espera una decisión humana</div>
     <div class="cu" id="cu"></div>
     <div class="cstats">
-      <div class="cst rv" data-step="8" style="--d:0s"><b>6 de 9</b><span>skills en acción; ramas, hotfix y entrega no hicieron falta</span></div>
+      <div class="cst rv" data-step="8" style="--d:0s"><b>9 de 9</b><span>skills SDD en acción a lo largo del ciclo</span></div>
       <div class="cst rv" data-step="8" style="--d:.1s"><b>36 → 137</b><span>criterios CA-NN convertidos en pruebas que pasan</span></div>
       <div class="cst rv" data-step="8" style="--d:.2s"><b>63</b><span>commits y 7 merges; el ciclo queda en los trailers SDD</span></div>
       <div class="cst rv" data-step="8" style="--d:.3s"><b>4</b><span>verificaciones con contexto limpio y 1 ajuste de spec con OK</span></div>
@@ -287,7 +287,7 @@ const FLOW=[
  {k:'Propuesta',ph:1,l:'A',i:'sign',tag:'Skill 2',t:'Propuesta: convertir el paquete en spec',d:'Escribe el spec, deriva los criterios CA-NN y adopta el WBS como plan. El paquete se referencia, no se copia.',o:'Spec + CA-NN'},
  {k:'Gate 1',ph:1,l:'P',i:'lock',h:1,tag:'Gate 1',t:'Aprueban los roles del acta',d:'Arquitecto, líder técnico, UI/UX y seguridad firman. El agente no firma por nadie. Con su OK, el spec es el punto fijo.',o:''},
  {k:'Aplicación',ph:2,l:'A',i:'hammer',tag:'Skill 3',t:'Aplicación: construir',d:'Pruebas primero y código mínimo, cumpliendo el OpenAPI y el DDL referenciados. Ante un hallazgo, se detiene.',o:'Pruebas + código'},
- {k:'Verificación',ph:3,l:'A',i:'check',tag:'Skill 4',t:'Verificación: inspeccionar',d:'Valida contrato, esquema, estados de pantalla y roles con los CA-NN; mide la cobertura del proyecto.',o:'Matriz + reporte'},
+ {k:'Verificación',ph:2,l:'A',i:'check',tag:'Skill 4',t:'Verificación: inspeccionar',d:'Valida contrato, esquema, estados de pantalla y roles con los CA-NN; mide la cobertura del proyecto.',o:'Matriz + reporte'},
  {k:'Gate 2',ph:3,l:'P',i:'lock',h:1,tag:'Gate 2',t:'El desarrollador aprueba el cierre',d:'La IA no se autoaprueba. El desarrollador revisa el reporte y decide si el cambio se integra.',o:''},
  {k:'Integrar',ph:3,l:'A',i:'branch',tag:'Con OK',t:'Se integra al producto principal',d:'Un script valida las reglas y hace la integración local, solo con el OK explícito del desarrollador.',o:'Cambio integrado'},
  {k:'Hotfix',ph:4,l:'A',i:'alert',tag:'Skill 5',t:'Hotfix: arreglar lo que ya corre',d:'Última fase: prueba que reproduce el fallo, arreglo mínimo y post-mortem. Si el spec está mal, vuelve a Exploración.',o:'Arreglo mínimo'}
@@ -372,8 +372,8 @@ $('#mp').innerHTML=`<div class="mh rv" data-step="0"><div>Paquete de diseño de 
 const CH=[
  {n:'Planificación',p:'Sin skills',i:'person',inp:[['Necesidades de negocio','.docx'],['Contexto y restricciones','.md'],['Normativas y SLOs','.pdf']],out:[['Requerimientos e Historias','.md · .feature'],['Backlog / Roadmap','.xlsx'],['Pedido priorizado para SDD','.md',1]],who:'Personas de negocio y producto'},
  {n:'Diseño',p:'exploración · propuesta',i:'sign',inp:[['Paquete de diseño por HU','docs/design/'],['Specs e índice','.md'],['Arquitectura y ADR','.md']],out:[['Spec + índice con Historias','.md'],['Criterios CA-NN','.md'],['Plan = WBS + CA-NN','plan-*.md'],['Arquitectura (C4, tokens)','.md'],['Rama + commit SDD-HU','git']],who:'Gate 1: aprueban los roles del acta',g:1},
- {n:'Desarrollo',p:'aplicación · arquitectura · ramas · estado',i:'hammer',inp:[['Spec aprobado y CA-NN','.md'],['OpenAPI y DDL referenciados','.json · .sql'],['Plan y mapa de ramas','.md']],out:[['Pruebas por criterio','tests/**'],['Código fuente','src/**'],['ADR global','docs/adr/*.md'],['Mapa de ramas por HU','.md']],who:'Ante un hallazgo, el desarrollador aprueba el ajuste'},
- {n:'Testing',p:'verificación',i:'check',inp:[['Código construido','rama'],['Spec y criterios CA-NN','.md'],['Umbral de cobertura','.md']],out:[['Matriz criterio → prueba','.md'],['Reporte de verificación','commit'],['Spec recortado a lo construido','.md'],['Informe de cobertura','.xml · .html',1],['Cambio integrado','merge']],who:'Gate 2: el desarrollador aprueba el cierre',g:1},
+ {n:'Desarrollo',p:'aplicación · verificación · arquitectura · ramas · estado',i:'hammer',inp:[['Spec aprobado y CA-NN','.md'],['OpenAPI y DDL referenciados','.json · .sql'],['Plan y mapa de ramas','.md'],['Umbral de cobertura','.md']],out:[['Pruebas y código','tests/** · src/**'],['ADR global y mapa de ramas','.md'],['Matriz y reporte de verificación','.md · commit'],['Spec recortado a lo construido','.md'],['Informe de cobertura','.xml · .html',1]],who:'Ante un hallazgo, el desarrollador aprueba el ajuste'},
+ {n:'Testing',p:'Sin skills',i:'check',inp:[['Matriz y reporte de verificación','.md · commit'],['Spec recortado a lo construido','.md'],['Informe de cobertura','.xml · .html']],out:[['Cambio integrado','merge']],who:'Gate 2: el desarrollador aprueba el cierre',g:1},
  {n:'Entrega y Operación',p:'hotfix',i:'alert',inp:[['Descripción del fallo','texto'],['Registros del incidente','.log'],['Spec de la capacidad','.md']],out:[['Prueba de regresión','tests/**'],['Arreglo mínimo','src/**'],['Post-mortem','.md'],['Feedback al backlog','.md',1]],who:'El desarrollador aprueba la integración'}
 ];
 const li=x=>`<li>${x[0]}${x[1]?` <span class="ex">${x[1]}</span>`:''}${x[2]?'<span class="nw">Nuevo</span>':''}</li>`;
@@ -389,17 +389,17 @@ function chainSet(st){document.querySelectorAll('.cl').forEach((c,k)=>c.classLis
 /* ---------- slide 5: caso de uso, línea de tiempo (personas / IA y skills / artefactos) ---------- */
 const G='<span class="gate">GATE</span>';
 const CASE=[
- {h:'Baseline',cs:'Caso 5 · Fase 0',sk:['exploración'],
+ {h:'Baseline',cs:'Caso 5 · Fase 0',sk:['estado','exploración'],
   hu:['Pide migrar el applet e invoca la skill','Hace git init; define el tronco',G+'Decide 8 ítems: 6×10, colores, bugs…'],
-  ia:['Detecta Caso 5: código sin spec','Lee Reversi2.java (1583 líneas)','Spec candidato: 3 contradicciones y 3 bugs'],
-  ar:[['Spec · en desarrollo','.md'],['Índice de specs','.md'],['arquitectura','.md'],['Rama baseline/','git']]},
+  ia:['Estado y Caso 5: código sin spec','Lee Reversi2.java (1583 líneas)','Spec candidato: 3 contradicciones y 3 bugs'],
+  ar:[]},
  {h:'Arquitectura',cs:'Decisión de stack',sk:['arquitectura'],
   hu:['Elige Transloco, Vitest, DOM + CSS y GPLv3+',G+'Aprueba el ADR','Autoriza la rama arq/'],
   ia:['Verifica requisitos de Angular 21 en la web','Tabla de impacto sobre los specs','Redacta el ADR con opciones y riesgos'],
   ar:[['ADR 0001','aceptado · .md'],['arquitectura','.md'],['Rama arq/','git']]},
- {h:'Propuesta',cs:'Caso 4 · migración',sk:['exploración','propuesta'],
+ {h:'Propuesta',cs:'Caso 4 · migración',sk:['exploración','propuesta','ramas'],
   hu:['Alcance: solo paridad con el spec','Elige 4 fases; aprueba textos en español',G+'Gate 1: aprueba spec y plan'],
-  ia:['Riesgos del stack; plan en 4 fases','36 criterios CA-NN con método de prueba','Detecta 2 omisiones del baseline'],
+  ia:['Plan en 4 fases y mapa de ramas','36 criterios CA-NN con método de prueba','Detecta 2 omisiones del baseline'],
   ar:[['plan-migracion','.md'],['CA-01 … CA-36','en el plan'],['Deltas del spec','.md'],['Commit SDD-Caso 4','git']]},
  {h:'F1 · Dominio e IA',cs:'12 criterios',sk:['propuesta','aplicación','verificación'],
   hu:['Autoriza rama; cambia a Node 26',G+'Gate 1 y Gate 2','Pide reforzar pruebas; autoriza merge'],
@@ -409,14 +409,14 @@ const CASE=[
   hu:['Aprueba el diseño: reloj inyectable',G+'Gate 1 y Gate 2','Pide reforzar; autoriza el merge'],
   ia:['GameService: turnos, mensajes y tiempos','Corrige los defectos A, B y C del legacy','28 mutaciones: 26 detectadas'],
   ar:[['game/','src/app'],['83 pruebas','CA-13 … 23'],['Diseño de F2','en el plan'],['Merge al tronco','git']]},
- {h:'F3 · Interfaz',cs:'6 criterios',sk:['propuesta','aplicación','verificación'],
+ {h:'F3 · Interfaz',cs:'6 criterios',sk:['propuesta','aplicación','verificación','hotfix'],
   hu:['Decide aviso de ventana y título','Autoriza Transloco y el ajuste del spec',G+'Juega CA-28 en el navegador'],
-  ia:['UI con Transloco; probada en navegador','El verificador halla fichas redondas','Corrige: el 65 % era el diámetro'],
+  ia:['UI con Transloco; probada en navegador','El verificador halla fichas redondas','Hotfix: el 65 % era el diámetro'],
   ar:[['ui/','src/app'],['117 pruebas','CA-24 … 29'],['Spec ajustado','SDD-Ajuste'],['16 paquetes','MIT y PSF']]},
- {h:'F4 · i18n y cierre',cs:'7 criterios',sk:['propuesta','aplicación','verificación'],
+ {h:'F4 · i18n y cierre',cs:'7 criterios',sk:['propuesta','aplicación','verificación','entrega'],
   hu:['Abre en inglés; catálogo sin aviso','Aprueba título traducido y limpieza',G+'Gate final: cierra la migración'],
-  ia:['es.json, selector de idioma, atribución','npm audit y licencias del bundle','Verificador global: falta probar la config'],
-  ar:[['i18n/','es.json · en.json'],['137 pruebas','CA-30 … 36'],['Spec desplegado','.md'],['Plan destilado','.md']]}
+  ia:['es.json, selector de idioma, atribución','Entrega: changelog y tag local','Verificador global: falta probar la config'],
+  ar:[['i18n/','es.json · en.json'],['137 pruebas','CA-30 … 36'],['Spec desplegado','.md'],['Plan destilado','.md'],['Tag de versión','git']]}
 ];
 (function(){
  const cu=$('#cu');
