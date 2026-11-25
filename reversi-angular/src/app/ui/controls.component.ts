@@ -4,12 +4,14 @@
  */
 
 import { Component, inject } from '@angular/core';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ALLOWED_SIZES, LEVELS } from '../domain/board';
 import { Level } from '../domain/types';
 import { GameService } from '../game/game.service';
+import { LANGUAGES } from '../i18n/languages';
 
-/** Dificultad, filas, columnas y los botones New Game y Skip Turn. */
+/** Dificultad, filas, columnas, los botones New Game y Skip Turn y el selector de idioma. */
 @Component({
   selector: 'app-controls',
   imports: [TranslocoPipe],
@@ -40,6 +42,13 @@ import { GameService } from '../game/game.service';
       <button type="button" class="skip-turn" (click)="game.skipTurn()">
         {{ 'ui.skipTurn' | transloco }}
       </button>
+      <select id="lang" [attr.aria-label]="'ui.language' | transloco" (change)="onLang($event)">
+        @for (language of languages; track language.code) {
+          <option [value]="language.code" [selected]="language.code === activeLang()">
+            {{ language.label | transloco }}
+          </option>
+        }
+      </select>
     </div>
   `,
   styles: `
@@ -58,9 +67,20 @@ export class ControlsComponent {
   protected readonly game = inject(GameService);
   protected readonly sizes = ALLOWED_SIZES;
   protected readonly levels = LEVELS;
+  protected readonly languages = LANGUAGES;
+
+  private readonly transloco = inject(TranslocoService);
+  protected readonly activeLang = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  });
 
   protected onLevel(event: Event): void {
     this.game.setLevel((event.target as HTMLSelectElement).value as Level);
+  }
+
+  /** Cambia el idioma de todos los textos al instante; no toca la partida. */
+  protected onLang(event: Event): void {
+    this.transloco.setActiveLang((event.target as HTMLSelectElement).value);
   }
 
   protected onRows(event: Event): void {
