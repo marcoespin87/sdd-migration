@@ -4,10 +4,25 @@
  */
 
 import { Component, input } from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { TextRef } from './message-text';
 
-// Esqueleto (CA-24): la linea de mensaje esta por implementar.
-@Component({ selector: 'app-message-line', template: '' })
+/** Linea de mensaje: un texto del catalogo con sus parametros. */
+@Component({
+  selector: 'app-message-line',
+  imports: [TranslocoPipe],
+  template: `<p class="message" role="status">{{ text().key | transloco: text().params }}</p>`,
+  styles: `
+    .message {
+      margin: 0;
+      padding: 5px 10px;
+      min-height: 1.4em;
+      text-align: center;
+      font: 14px sans-serif;
+      white-space: pre-wrap;
+    }
+  `,
+})
 export class MessageLineComponent {
   readonly text = input.required<TextRef>();
 }
