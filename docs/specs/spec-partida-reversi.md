@@ -40,7 +40,7 @@ Idioma: la interfaz y los mensajes se ofrecen en inglés (idioma base) y españo
 **Inicio de partida.**
 - El tablero parte vacío salvo un cuadrado central de 2×2 ubicado en la fila `filas/2 - 1` y columna `columnas/2 - 1` (base 0): la computadora ocupa la diagonal principal (superior izquierda e inferior derecha) y el usuario la antidiagonal. `[Inferido del código]`
 - El turno inicial es del usuario. `[Confirmado por docs]`
-- Al iniciar una partida (al abrir, con *New Game* o al cambiar el tamaño) se evalúa si ya terminó. Con 2 filas o 2 columnas nadie puede mover y la partida termina de inmediato, mostrando el resultado. `[Inferido del código]`
+- Al iniciar una partida (al abrir, con *New Game* o al cambiar el tamaño) se evalúa si ya terminó. En un tablero de 2×2 nadie puede mover y la partida termina de inmediato, mostrando el resultado; en cualquier otro tamaño permitido hay jugadas disponibles al inicio. `[Inferido del código]`
 
 **Turno del usuario (clic en el tablero).** Se evalúa en este orden y se aplica el primer caso que corresponda: `[Inferido del código]`
 1. Partida terminada: mensaje de partida finalizada; no se juega.
