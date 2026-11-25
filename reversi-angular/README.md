@@ -9,6 +9,7 @@ comportamiento y corrige tres defectos del original.
 - **Plan de migración:** `docs/plan-migracion-reversi-angular-2026-11-25.md`.
 
 ## Cómo ejecutarlo
+
 Requiere **Node.js 22.12 o superior** (Angular 21 declara oficialmente `^20.19`, `^22.12` o `^24`; el
 proyecto se construyó y probó con Node 26.13.1, que el CLI marca como no soportado pero funciona).
 
@@ -21,6 +22,7 @@ npm run build                  # compilación estática en dist/reversi-angular/
 ```
 
 ## Estructura
+
 - `src/app/domain/` — reglas, IA y layout del tablero en TypeScript puro, sin Angular.
 - `src/app/game/` — `GameService`: turnos, mensajes, temporización de la computadora (reloj inyectable).
 - `src/app/ui/` — componentes: controles, línea de mensaje y tablero.
@@ -28,11 +30,13 @@ npm run build                  # compilación estática en dist/reversi-angular/
 - `public/i18n/en.json` y `es.json` — catálogos de textos (mismas claves en los dos).
 
 ## Idiomas
+
 La aplicación **siempre abre en inglés**; el selector de idioma cambia a español (o de vuelta) al
 instante, sin recargar y sin alterar la partida. La elección no se recuerda entre visitas ni se toma
 del navegador. Los textos no están en las plantillas: salen de los catálogos.
 
 ## Despliegue y límites conocidos
+
 - **Archivos estáticos.** `npm run build` genera una carpeta que se sirve con cualquier servidor de
   archivos. Los catálogos (`i18n/en.json` y `es.json`) viajan dentro de esa carpeta.
 - **Subdirectorios.** El catálogo se pide con una ruta relativa a `<base href>` (por defecto `/`). Si la
@@ -48,6 +52,7 @@ del navegador. Los textos no están en las plantillas: salen de los catálogos.
   cambios aparte (ver `docs/arquitectura.md`).
 
 ## Licencia y atribución
+
 Reversi2 — Copyright (c) 2004 by Keith Fenske (https://kwfenske.github.io/).
 Obra derivada, distribuida bajo la GNU General Public License, versión 3 o posterior (ver `LICENSE`).
 Todos los archivos `.ts`, `.html` y `.css` de `src/` llevan la atribución en su encabezado; los
