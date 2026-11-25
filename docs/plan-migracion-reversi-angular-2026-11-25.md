@@ -96,7 +96,7 @@ Decisiones técnicas de la F3 para aprobar en su gate. Lo que cambia respecto de
 |---|---|---|---|---|
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
 | F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | mergeada a `develop` |
-| F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | en curso (propuesta) |
+| F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | construida; pendiente de verificación |
 | F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | pendiente |
 
 Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualizado con la anterior.
@@ -117,11 +117,11 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - [x] Partidas completas simuladas con semillas (cubre CA-23).
 
 **F3 — Interfaz y tablero** (rama `migrate/partida-reversi-ui`)
-- [ ] Instalar `@jsverse/transloco` y configurarlo (inglés por defecto, catálogo `public/i18n/en.json`); título de la página. Configuración sin comportamiento propio: sin prueba previa.
-- [ ] `ui/colors.ts`, `ui/message-text.ts` y `ui/element-size.directive.ts` (colores del spec, clave de catálogo y plural, medición con `ResizeObserver`). Soporte: se prueba a través de las demás tareas.
-- [ ] `ui/controls.component`: selectores y botones con textos del catálogo (cubre CA-24).
-- [ ] `ui/board.component`: pintado, mouse y recálculo al cambiar el tamaño (cubre CA-25, CA-26, CA-27).
-- [ ] `ui/message-line.component` y `app.component`: aviso de ventana con prioridad, composición y reemplazo de la plantilla del CLI (cubre CA-27, CA-29).
+- [x] Instalar `@jsverse/transloco` y configurarlo (inglés por defecto, catálogo `public/i18n/en.json`); título de la página. Configuración sin comportamiento propio: sin prueba previa.
+- [x] `ui/colors.ts`, `ui/message-text.ts` y `ui/element-size.directive.ts` (colores del spec, clave de catálogo y plural, medición con `ResizeObserver`). Soporte: se prueba a través de las demás tareas.
+- [x] `ui/controls.component`: selectores y botones con textos del catálogo (cubre CA-24).
+- [x] `ui/board.component`: pintado, mouse y recálculo al cambiar el tamaño (cubre CA-25, CA-26, CA-27).
+- [x] `ui/message-line.component` y `app.component`: aviso de ventana con prioridad, composición y reemplazo de la plantilla del CLI (cubre CA-27, CA-29).
 - [ ] Partida completa en el navegador (CA-28, manual; lo ejecuta el usuario).
 
 **F4 — i18n y cierre** (rama `migrate/partida-reversi-i18n`)
@@ -219,6 +219,12 @@ Ninguno.
 
 ## Ajustes durante la construcción
 Ninguno en el spec.
+
+Detalles de implementación de la Fase 3 respecto al diseño aprobado (no cambian el spec):
+- `colors.ts` quedó en `ui/` y las pruebas de la interfaz comparten `ui/test-utils.ts` (banco de pruebas con el catálogo real `public/i18n/en.json`, reloj simulado y un `ResizeObserver` de prueba). `tsconfig.json` habilita `resolveJsonModule` y `tsconfig.app.json` excluye los `test-utils.ts` del build.
+- Se añadió la clave `ui.level` ("Difficulty") al catálogo para el `aria-label` del selector de dificultad, de modo que ni siquiera los atributos llevan texto literal.
+- Antes de medir el contenedor (0 × 0) no se muestra ningún aviso de ventana; así no parpadea un aviso falso en el primer dibujo.
+- Comprobación extra, fuera de los criterios automáticos: la aplicación se probó en un navegador real (`ng serve`). Cargó el catálogo por HTTP sin errores de consola; un clic real jugó la casilla (3, 4) con el mensaje en singular; la computadora respondió y volteó; al reducir la ventana apareció "too narrow to display 10 columns" y al restaurarla volvió el mensaje de la computadora; el resaltado azul aparece con el cursor sobre una jugada legal y desaparece al salir del tablero. No sustituye a CA-28, que sigue siendo una partida completa jugada por el usuario.
 
 Detalles de implementación de la Fase 2 respecto al diseño aprobado (no cambian el spec):
 - Se agregó una tercera ficha de inyección, `BOARD_FACTORY` (por defecto `createBoard`), para poder probar escenarios con tableros fijos (usuario sin jugadas, computadora sin jugadas, final de partida) sin depender de largas secuencias de juego.
