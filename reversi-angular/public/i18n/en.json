@@ -7,7 +7,9 @@
     "columns": "Columns: ",
     "newGame": "New Game",
     "skipTurn": "Skip Turn",
-    "language": "Language"
+    "language": "Language",
+    "langEn": "English",
+    "langEs": "Español"
   },
   "credits": "Reversi or Othello.  Copyright (c) 2004 by Keith Fenske.  GNU Public License.",
   "begin": "Click the mouse on a position of your choice.  You are the dark pieces.",
