@@ -81,7 +81,7 @@ Decisiones técnicas de la F2 para aprobar en su gate. No cambian lo que promete
 | Fase | Rama | Depende de | Spec(s) | Estado |
 |---|---|---|---|---|
 | F1 Dominio e IA | `migrate/partida-reversi-dominio` | tronco | `spec-partida-reversi.md` | mergeada a `develop` |
-| F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | en curso (propuesta) |
+| F2 Servicio de partida | `migrate/partida-reversi-juego` | F1 | `spec-partida-reversi.md` | construida; pendiente de verificación |
 | F3 Interfaz y tablero | `migrate/partida-reversi-ui` | F2 | `spec-partida-reversi.md` | pendiente |
 | F4 i18n y cierre | `migrate/partida-reversi-i18n` | F3 | `spec-partida-reversi.md` | pendiente |
 
@@ -96,11 +96,11 @@ Las fases se mergean en orden a `develop`; cada una nace del tronco ya actualiza
 - [x] `domain/layout`: cálculo del layout y hit-test (cubre CA-10, CA-11, CA-12).
 
 **F2 — Servicio de partida** (rama `migrate/partida-reversi-juego`)
-- [ ] `game/scheduler.ts`, `game/messages.ts` y `game/test-utils.ts` (reloj y azar inyectables, `FakeScheduler`, tipos de mensaje). Soporte sin comportamiento propio: se prueba a través de las demás tareas.
-- [ ] `game/GameService`: estado, reinicios y mensajes por clave; clic del usuario en sus 7 casos; *Skip Turn*; cambio de dificultad (cubre CA-13, CA-14, CA-17, CA-18, CA-21, CA-22).
-- [ ] Turno de la computadora con temporizadores cancelables y cancelación por generación (cubre CA-15, CA-16, CA-19).
-- [ ] Resaltado derivado del cursor (cubre CA-20).
-- [ ] Partidas completas simuladas con semillas (cubre CA-23).
+- [x] `game/scheduler.ts`, `game/messages.ts` y `game/test-utils.ts` (reloj y azar inyectables, `FakeScheduler`, tipos de mensaje). Soporte sin comportamiento propio: se prueba a través de las demás tareas.
+- [x] `game/GameService`: estado, reinicios y mensajes por clave; clic del usuario en sus 7 casos; *Skip Turn*; cambio de dificultad (cubre CA-13, CA-14, CA-17, CA-18, CA-21, CA-22).
+- [x] Turno de la computadora con temporizadores cancelables y cancelación por generación (cubre CA-15, CA-16, CA-19).
+- [x] Resaltado derivado del cursor (cubre CA-20).
+- [x] Partidas completas simuladas con semillas (cubre CA-23).
 
 **F3 — Interfaz y tablero** (rama `migrate/partida-reversi-ui`)
 - [ ] Componentes de controles, mensaje y tablero con Transloco y catálogo en inglés (cubre CA-24, CA-25, CA-26, CA-27, CA-28, CA-29).
@@ -200,6 +200,11 @@ Ninguno.
 
 ## Ajustes durante la construcción
 Ninguno en el spec.
+
+Detalles de implementación de la Fase 2 respecto al diseño aprobado (no cambian el spec):
+- Se agregó una tercera ficha de inyección, `BOARD_FACTORY` (por defecto `createBoard`), para poder probar escenarios con tableros fijos (usuario sin jugadas, computadora sin jugadas, final de partida) sin depender de largas secuencias de juego.
+- `skipTurn()` decide la jugada de la computadora de forma síncrona (sin espera) y solo el parpadeo es asíncrono: el mensaje de la jugada ya está visible al retornar.
+- `.prettierrc`: `endOfLine: auto`, porque Git en Windows reescribe el árbol con CRLF al cambiar de rama.
 
 Seguimientos que dejó la verificación de la Fase 1 (no son ajustes del spec):
 - **F3:** si faltan columnas y filas a la vez, el legacy muestra solo el mensaje de filas ("too short"); `computeLayout` informa ambos indicadores, y la interfaz decide la precedencia para igualar al legacy.
