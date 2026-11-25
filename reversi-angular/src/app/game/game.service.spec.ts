@@ -183,6 +183,33 @@ describe('GameService', () => {
       expect(game.board()).not.toEqual(before);
     });
 
+    it('CA-14 Skip Turn con una computadora sin jugadas lo avisa y devuelve el turno al usuario', () => {
+      const { game, scheduler } = setup({ factory: fixedBoard(['.cu', '.cu']) });
+      const before = game.board();
+      game.skipTurn();
+      expect(game.message()).toEqual({ key: 'computerCantMove' });
+      expect(game.turn()).toBe('user');
+      expect(game.flash()).toBeNull();
+      expect(game.board()).toEqual(before);
+      expect(scheduler.pending).toBe(0);
+    });
+
+    it('CA-16 durante el parpadeo responden el clic y el cursor sin alterar la jugada', () => {
+      const { game, scheduler } = setup();
+      game.skipTurn();
+      const before = game.board();
+      game.click(LEGAL);
+      expect(game.message()).toEqual({ key: 'notYourTurn' });
+      expect(game.board()).toEqual(before);
+      game.pointerAt(LEGAL);
+      expect(game.highlight()).toBeNull();
+      game.skipTurn();
+      expect(game.message()).toEqual({ key: 'skipNotYourTurn' });
+      scheduler.advance(1800);
+      expect(game.turn()).toBe('user');
+      expect(game.board()).not.toEqual(before); // la jugada de la computadora se aplicó igual
+    });
+
     it('CA-16 New Game durante el parpadeo de un Skip Turn funciona y cancela la jugada', () => {
       const { game, scheduler } = setup();
       game.skipTurn();
@@ -251,6 +278,7 @@ describe('GameService', () => {
       expect(game.turn()).toBe('user');
       expect(game.flash()).toBeNull();
       expect(game.board()).toEqual(boardFrom(['uuu', '.cu']));
+      expect(legalMoves(game.board(), 'user').length).toBeGreaterThan(0); // la partida sigue
     });
 
     it('CA-17 si el usuario queda sin jugadas tras la de la computadora, se avisa y el turno no pasa solo', () => {
@@ -339,6 +367,17 @@ describe('GameService', () => {
   });
 
   describe('resaltado', () => {
+    it('CA-20 al volver el turno al usuario con el cursor quieto sobre una jugada legal, se resalta', () => {
+      const { game, scheduler } = setup({ factory: fixedBoard(['.cu', '.cu']) });
+      game.pointerAt({ row: 1, col: 0 }); // jugada legal del usuario y es su turno
+      expect(game.highlight()).toEqual({ row: 1, col: 0 });
+      game.click({ row: 0, col: 0 }); // pasa el turno a la computadora; el cursor sigue quieto
+      expect(game.highlight()).toBeNull();
+      scheduler.advance(1000); // la computadora no puede mover: vuelve el usuario
+      expect(game.turn()).toBe('user');
+      expect(game.highlight()).toEqual({ row: 1, col: 0 });
+    });
+
     it('CA-20 se resalta solo la casilla vacía que es jugada legal del usuario', () => {
       const { game } = setup();
       game.pointerAt(LEGAL);
@@ -450,6 +489,9 @@ describe('GameService', () => {
   });
 
   describe('partidas completas simuladas', () => {
+    // Ramas poco frecuentes que las simulaciones deben recorrer al menos una vez.
+    const visited = new Set<string>();
+
     const sizes: [number, number][] = [
       [4, 4],
       [6, 6],
@@ -467,16 +509,22 @@ describe('GameService', () => {
             game.setLevel(level);
             expect(game.turn()).toBe('user'); // el usuario siempre mueve primero
 
+            const pick = seeded(seed * 31 + rows + cols);
             let lastChecked: unknown = null;
             let steps = 0;
             while (game.turn() !== 'over') {
               expect(steps++).toBeLessThan(20000);
               if (game.turn() === 'user') {
+                const key = game.message().key;
+                if (key === 'computerCantMove' || key === 'mustSkip') {
+                  visited.add(key);
+                }
                 const moves = legalMoves(game.board(), 'user');
                 if (moves.length === 0) {
                   game.skipTurn();
                 } else {
-                  game.click({ row: moves[0].row, col: moves[0].col });
+                  const move = moves[Math.floor(pick() * moves.length)];
+                  game.click({ row: move.row, col: move.col });
                 }
               } else {
                 const message = game.message();
@@ -511,5 +559,9 @@ describe('GameService', () => {
         });
       }
     }
+
+    it('CA-23 las simulaciones recorrieron "la computadora no puede mover" y "el usuario no puede mover"', () => {
+      expect([...visited].sort()).toEqual(['computerCantMove', 'mustSkip']);
+    });
   });
 });
