@@ -3,7 +3,14 @@
  * Distribuido bajo la GNU General Public License, version 3 o posterior.
  */
 
-import { ALLOWED_SIZES, DEFAULT_COLS, DEFAULT_LEVEL, DEFAULT_ROWS, LEVELS, createBoard } from './board';
+import {
+  ALLOWED_SIZES,
+  DEFAULT_COLS,
+  DEFAULT_LEVEL,
+  DEFAULT_ROWS,
+  LEVELS,
+  createBoard,
+} from './board';
 
 describe('board', () => {
   it('CA-01 posición inicial por tamaño: cuadrado central 2x2, computadora en la diagonal principal', () => {

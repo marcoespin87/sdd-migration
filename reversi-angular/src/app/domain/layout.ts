@@ -37,7 +37,12 @@ function div(a: number, b: number): number {
  * cuadradas, tablero centrado, proporciones y minimos. Si no cabe, informa las columnas o filas que
  * no caben y calcula igualmente el tamano minimo.
  */
-export function computeLayout(width: number, height: number, rows: number, cols: number): BoardLayout {
+export function computeLayout(
+  width: number,
+  height: number,
+  rows: number,
+  cols: number,
+): BoardLayout {
   const boardWidth = Math.max(width - 2 * CANVAS_BORDER, 0);
   const boardHeight = Math.max(height - 2 * CANVAS_BORDER, 0);
 

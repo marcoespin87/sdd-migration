@@ -83,7 +83,9 @@ export function legalMoves(board: Board, player: Player): Move[] {
 export function applyMove(board: Board, player: Player, row: number, col: number): Board {
   const flips = flippedCells(board, player, row, col);
   if (flips.length === 0) {
-    throw new Error(`Jugada ilegal en fila ${row + 1}, columna ${col + 1}: no voltea ninguna ficha`);
+    throw new Error(
+      `Jugada ilegal en fila ${row + 1}, columna ${col + 1}: no voltea ninguna ficha`,
+    );
   }
   const cells: Cell[][] = board.map((line) => [...line]);
   cells[row][col] = player;
