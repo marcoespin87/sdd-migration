@@ -44,6 +44,34 @@ describe('board', () => {
     expect(line.style.width).toBe('1px');
   });
 
+  it('CA-25 las líneas verticales abarcan todo el tablero y arrancan en su margen superior', async () => {
+    const { fixture } = await render();
+    const lines = [...fixture.nativeElement.querySelectorAll('.line.vertical')] as HTMLElement[];
+    expect(lines.map((l) => l.style.left)).toEqual(
+      Array.from({ length: 11 }, (_, i) => `${14 + i * 67}px`),
+    );
+    for (const line of lines) {
+      expect(line.style.top).toBe('48px');
+      expect(line.style.width).toBe('1px');
+      expect(line.style.height).toBe('403px'); // 6 filas × 67 + 1
+      expect(line.style.backgroundColor).toBe(COLORS.gridLine);
+    }
+  });
+
+  it('CA-25 las líneas horizontales abarcan todo el tablero y arrancan en su margen izquierdo', async () => {
+    const { fixture } = await render();
+    const lines = [...fixture.nativeElement.querySelectorAll('.line.horizontal')] as HTMLElement[];
+    expect(lines.map((l) => l.style.top)).toEqual(
+      Array.from({ length: 7 }, (_, i) => `${48 + i * 67}px`),
+    );
+    for (const line of lines) {
+      expect(line.style.left).toBe('14px');
+      expect(line.style.height).toBe('1px');
+      expect(line.style.width).toBe('671px'); // 10 columnas × 67 + 1
+      expect(line.style.backgroundColor).toBe(COLORS.gridLine);
+    }
+  });
+
   it('CA-25 pinta cada ficha con el color de su estado', async () => {
     const { fixture } = await render();
     // Posición inicial 6x10: computadora en (2,4) y (3,5); usuario en (2,5) y (3,4).
@@ -59,7 +87,7 @@ describe('board', () => {
     const c = cell(fixture, 2, 4);
     expect(c.style.width).toBe('58px');
     expect(c.style.height).toBe('58px');
-    expect(c.style.borderRadius).toBe('43px');
+    expect(c.style.borderRadius).toBe('21.5px'); // arco de 43 px: radio efectivo de 21,5 px
     expect(c.style.left).toBe('287px'); // 14 + 1 + 4 + 4*67
     expect(c.style.top).toBe('187px'); // 48 + 1 + 4 + 2*67
   });

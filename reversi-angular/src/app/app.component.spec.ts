@@ -5,6 +5,7 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { createBoard } from './domain/board';
+import { COLORS } from './ui/colors';
 import { App } from './app.component';
 import { StubResizeObserver, configureUi } from './ui/test-utils';
 
@@ -74,9 +75,54 @@ describe('App', () => {
     expect(line()).toBe(played);
   });
 
+  it('CA-24 la pantalla tiene el fondo rosa del juego', async () => {
+    const { root } = await render();
+    expect((root.querySelector('main.app') as HTMLElement).style.backgroundColor).toBe(
+      COLORS.background,
+    );
+  });
+
+  it('CA-27 no se avisa mientras falte alguna de las dos medidas del contenedor', async () => {
+    const { resize, line } = await render();
+    await resize(700, 0);
+    expect(line()).toBe(CREDITS);
+    await resize(0, 500);
+    expect(line()).toBe(CREDITS);
+    await resize(100, 100);
+    expect(line()).toBe('The window is too short to display 6 rows.');
+  });
+
   it('CA-27 antes de medir el contenedor (0x0) no se muestra ningún aviso', async () => {
     const { line } = await render();
     expect(line()).toBe(CREDITS);
+  });
+
+  it('CA-29 el selector de dificultad y el de columnas responden durante el parpadeo', async () => {
+    const { resize, click, game, scheduler, fixture, root, cells } = await render();
+    await resize(700, 500);
+    click('button.skip-turn');
+    await settle(fixture);
+    expect(game.turn()).toBe('computer');
+
+    // la dificultad cambia sin cancelar la jugada pendiente
+    const level = root.querySelector('select#level') as HTMLSelectElement;
+    level.value = 'easy';
+    level.dispatchEvent(new Event('change'));
+    await settle(fixture);
+    expect(game.level()).toBe('easy');
+    expect(game.turn()).toBe('computer');
+    scheduler.advance(1800);
+    expect(game.turn()).toBe('user');
+
+    // las columnas reinician la partida, también en pleno parpadeo
+    click('button.skip-turn');
+    const cols = root.querySelector('select#cols') as HTMLSelectElement;
+    cols.value = '8';
+    cols.dispatchEvent(new Event('change'));
+    await settle(fixture);
+    expect(game.cols()).toBe(8);
+    expect(cells()).toBe(48);
+    expect(game.turn()).toBe('user');
   });
 
   it('CA-29 Skip Turn no bloquea: durante el parpadeo responden New Game, los selectores y el clic', async () => {
